@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>مدينة الواقع - لعبة المدينة والجاذبية</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Cairo', sans-serif;
+            background-color: #0d1117;
+            color: #e6edf3;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        canvas {
+            display: block;
+        }
+        #overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 100;
+            text-align: center;
+            backdrop-filter: blur(5px);
+        }
+        #instructions {
+            background: linear-gradient(135deg, #1a1f2e 0%, #2d3748 100%);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 150, 255, 0.3);
+            max-width: 90%;
+            margin: 20px;
+            border: 1px solid rgba(0, 150, 255, 0.2);
+            animation: glow 2s infinite alternate;
+        }
+        @keyframes glow {
+            from { box-shadow: 0 0 20px rgba(0, 150, 255, 0.3); }
+            to { box-shadow: 0 0 40px rgba(0, 150, 255, 0.6); }
+        }
+        #message-box {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #238636 0%, #2ea043 100%);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 12px;
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+            z-index: 101;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            transform: translateY(-10px);
+        }
+
+        /* تحسين أدوات التحكم باللمس */
+        #mobile-controls {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: none;
+            z-index: 50;
+        }
+        
+        #joystick-area {
+            position: absolute;
+            bottom: 25px;
+            left: 25px;
+            width: 160px;
+            height: 160px;
+            background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 70%);
+            border-radius: 50%;
+            pointer-events: auto;
+            touch-action: none;
+            border: 2px solid rgba(255,255,255,0.2);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+
+        #joystick-thumb {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle, rgba(0,150,255,0.9) 0%, rgba(0,100,200,0.9) 100%);
+            border-radius: 50%;
+            border: 3px solid rgba(255,255,255,0.9);
+            box-shadow: 0 4px 15px rgba(0,150,255,0.4);
+            transition: transform 0.1s;
+        }
+
+        #jump-button {
+            position: absolute;
+            bottom: 35px;
+            right: 35px;
+            width: 110px;
+            height: 110px;
+            background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 70%);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.6rem;
+            font-weight: bold;
+            pointer-events: auto;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(0, 150, 255, 0.4);
+            transition: all 0.1s;
+            border: 2px solid rgba(255,255,255,0.3);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        #jump-button:active {
+            background: radial-gradient(circle, rgba(0,150,255,0.6) 0%, rgba(0,100,200,0.6) 100%);
+            transform: scale(0.95);
+        }
+        
+        #look-area {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: auto;
+            touch-action: none;
+        }
+
+        /* مؤشر الطاقة */
+        #energy-bar {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 200px;
+            height: 20px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+        #energy-fill {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #00ff00 0%, #ffff00 50%, #ff0000 100%);
+            transition: width 0.3s;
+            border-radius: 8px;
+        }
+
+        @media (max-width: 768px) {
+            #mobile-controls {
+                display: block;
+            }
+            #instructions .desktop-keys {
+                display: none;
+            }
+            #energy-bar {
+                width: 150px;
+                height: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="message-box"></div>
+    <div id="energy-bar">
+        <div id="energy-fill"></div>
+    </div>
+    <div id="overlay">
+        <div id="instructions" class="space-y-4">
+            <h1 class="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+                مدينة الواقع - الجيل الجديد
+            </h1>
+            <p class="text-lg text-gray-300">استكشف مدينة واقعية بتفاصيل عالية الجودة وميكانيكا قفز محسنة</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+                <div class="bg-gray-800/50 p-4 rounded-xl border border-gray-700">
+                    <h2 class="text-xl font-semibold text-cyan-300 mb-3">التحكم (الهاتف):</h2>
+                    <ul class="space-y-3 text-right">
+                        <li class="flex items-center justify-end gap-2">
+                            <span class="text-gray-400">عصا اليسار</span>
+                            <div class="w-6 h-6 bg-blue-500 rounded-full"></div>
+                        </li>
+                        <li class="flex items-center justify-end gap-2">
+                            <span class="text-gray-400">لمس الشاشة</span>
+                            <div class="w-6 h-6 bg-green-500 rounded-full"></div>
+                        </li>
+                        <li class="flex items-center justify-end gap-2">
+                            <span class="text-gray-400">زر القفز</span>
+                            <div class="w-6 h-6 bg-purple-500 rounded-full"></div>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="bg-gray-800/50 p-4 rounded-xl border border-gray-700">
+                    <h2 class="text-xl font-semibold text-yellow-300 mb-3">ميزات جديدة:</h2>
+                    <ul class="space-y-2 text-sm text-gray-300 text-right">
+                        <li>✅ مدينة واقعية بتفاصيل عالية</li>
+                        <li>✅ قفز متعدد بطاقة</li>
+                        <li>✅ رسومات فائقة الجودة</li>
+                        <li>✅ إضاءة وضوء واقعي</li>
+                        <li>✅ أرضية وطرق تفصيلية</li>
+                    </ul>
+                </div>
+            </div>
+
+            <button id="startButton" class="mt-8 px-10 py-4 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white font-bold rounded-xl transition-all duration-300 shadow-2xl hover:shadow-cyan-500/25 hover:scale-105 active:scale-95">
+                🚀 بدء الرحلة
+            </button>
+        </div>
+    </div>
+    
+    <!-- عناصر التحكم باللمس -->
+    <div id="mobile-controls">
+        <div id="look-area"></div>
+        <div id="joystick-area">
+            <div id="joystick-thumb"></div>
+        </div>
+        <div id="jump-button">⚡</div>
+    </div>
+
+    <script type="module">
+        // الثوابت والمتغيرات العامة
+        const CITY_SIZE = 400; // مدينة أكبر
+        const MAX_BUILDINGS = 80; // مباني أكثر
+        const BASE_JUMP_VELOCITY = 18; // قوة قفز أساسية
+        const MAX_JUMPS = 3; // أقصى عدد قفزات متتالية
+        const JOYSTICK_RADIUS = 75;
+
+        let camera, scene, renderer;
+        let world, playerBody, enemyBody, groundBody;
+        let groundMesh, enemyMesh, playerMesh;
+        let isAuthReady = false;
+        let jumpsRemaining = MAX_JUMPS;
+        let lastJumpTime = 0;
+        let energy = 100;
+
+        // حالة تحكم اللاعب
+        let moveForward = false;
+        let moveBackward = false;
+        let moveLeft = false;
+        let moveRight = false;
+        let canJump = true;
+        const maxSpeed = 18;
+        let lastTime;
+
+        // حالة عصا التحكم
+        let joystickCenter = { x: 0, y: 0 };
+        let activeTouchId = null;
+        let isMobile = window.innerWidth <= 768;
+
+        // التحكم في الكاميرا
+        let controls = { pitch: -0.3, yaw: 0 }; // زيادة ميل الكاميرا للنظر للأرض
+
+        // تحسين الرسائل
+        function showMessage(text) {
+            const box = document.getElementById('message-box');
+            box.textContent = text;
+            box.style.opacity = 1;
+            box.style.transform = 'translateY(0)';
+            
+            setTimeout(() => {
+                box.style.opacity = 0;
+                box.style.transform = 'translateY(-10px)';
+            }, 3000);
+        }
+
+        // تحديث طاقة القفز
+        function updateEnergyBar() {
+            const fill = document.getElementById('energy-fill');
+            fill.style.width = `${energy}%`;
+        }
+
+        // 1. إعداد المشهد والفيزياء
+        function init() {
+            // المشهد ثلاثي الأبعاد
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x87a6d6);
+            scene.fog = new THREE.FogExp2(0x87a6d6, 0.0015);
+
+            // الكاميرا
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+            camera.position.set(0, 10, 20); // إبعاد الكاميرا قليلاً للخلف
+
+            // المضيف مع تحسينات الجودة
+            renderer = new THREE.WebGLRenderer({ 
+                antialias: true,
+                powerPreference: "high-performance"
+            });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.2;
+            document.body.appendChild(renderer.domElement);
+
+            // عالم الفيزياء
+            world = new CANNON.World();
+            world.gravity.set(0, -30, 0);
+            world.broadphase = new CANNON.SAPBroadphase();
+            world.solver.iterations = 15;
+            world.defaultContactMaterial.friction = 0.3;
+            world.defaultContactMaterial.restitution = 0.2;
+
+            // إنشاء البيئة الواقعية
+            createRealisticEnvironment();
+            createPlayer();
+            createEnemy();
+
+            // إعداد المستمعين للتحكم
+            setupControls();
+
+            // معالجة تغيير حجم النافذة
+            window.addEventListener('resize', onWindowResize);
+
+            isAuthReady = true;
+            updateEnergyBar();
+            
+            // إظهار الأرضية مباشرة
+            showMessage("🌍 الأرضية جاهزة للاستكشاف!");
+        }
+
+        // 2. إنشاء بيئة واقعية
+        function createRealisticEnvironment() {
+            // ===== الأرضية الأساسية =====
+            const groundGeometry = new THREE.PlaneGeometry(CITY_SIZE, CITY_SIZE, 100, 100);
+            
+            // استخدام مادة أكثر وضوحاً
+            const groundMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x4a7c59, // لون أخضر للأرضية
+                roughness: 0.9,
+                metalness: 0.1,
+                side: THREE.DoubleSide
+            });
+            
+            groundMesh = new THREE.Mesh(groundGeometry, groundMaterial);
+            groundMesh.rotation.x = -Math.PI / 2;
+            groundMesh.receiveShadow = true;
+            groundMesh.position.y = 0;
+            
+            // إضافة نسيج للأرضية
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            
+            // رسم نمط للأرضية
+            ctx.fillStyle = '#4a7c59';
+            ctx.fillRect(0, 0, 512, 512);
+            
+            ctx.strokeStyle = '#3a6c49';
+            ctx.lineWidth = 2;
+            for(let i = 0; i < 512; i += 32) {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i, 512);
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.moveTo(0, i);
+                ctx.lineTo(512, i);
+                ctx.stroke();
+            }
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(CITY_SIZE / 50, CITY_SIZE / 50);
+            groundMaterial.map = texture;
+            
+            scene.add(groundMesh);
+
+            // ===== الأرضية الفيزيائية =====
+            const groundShape = new CANNON.Plane();
+            groundBody = new CANNON.Body({ 
+                mass: 0,
+                material: new CANNON.Material({ friction: 0.5, restitution: 0.3 })
+            });
+            groundBody.addShape(groundShape);
+            groundBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
+            groundBody.position.y = 0;
+            world.addBody(groundBody);
+
+            // ===== شبكة الطرق =====
+            createRoadNetwork();
+
+            // ===== المباني الواقعية =====
+            createRealisticBuildings();
+
+            // ===== إضافة نباتات =====
+            createVegetation();
+
+            // ===== إضافة سيارات =====
+            createVehicles();
+
+            // ===== إضاءة واقعية =====
+            setupRealisticLighting();
+
+            // ===== إضافة حواف للمدينة لمنع السقوط =====
+            createCityWalls();
+        }
+
+        // 3. إنشاء حواف المدينة
+        function createCityWalls() {
+            const wallHeight = 50;
+            const wallThickness = 5;
+            const wallMaterial = new THREE.MeshStandardMaterial({
+                color: 0x888888,
+                roughness: 0.7,
+                metalness: 0.3
+            });
+
+            // الجدران الأربعة
+            const positions = [
+                [CITY_SIZE/2 + wallThickness/2, wallHeight/2, 0], // شمال
+                [-CITY_SIZE/2 - wallThickness/2, wallHeight/2, 0], // جنوب
+                [0, wallHeight/2, CITY_SIZE/2 + wallThickness/2], // شرق
+                [0, wallHeight/2, -CITY_SIZE/2 - wallThickness/2]  // غرب
+            ];
+
+            const dimensions = [
+                [wallThickness, wallHeight, CITY_SIZE], // شمال/جنوب
+                [CITY_SIZE, wallHeight, wallThickness]  // شرق/غرب
+            ];
+
+            positions.forEach((pos, index) => {
+                const dimIndex = index < 2 ? 0 : 1;
+                const wallGeometry = new THREE.BoxGeometry(...dimensions[dimIndex]);
+                const wallMesh = new THREE.Mesh(wallGeometry, wallMaterial);
+                wallMesh.position.set(...pos);
+                wallMesh.castShadow = true;
+                wallMesh.receiveShadow = true;
+                scene.add(wallMesh);
+
+                // الجسم الفيزيائي للحائط
+                const wallShape = new CANNON.Box(new CANNON.Vec3(
+                    dimensions[dimIndex][0]/2,
+                    dimensions[dimIndex][1]/2,
+                    dimensions[dimIndex][2]/2
+                ));
+                const wallBody = new CANNON.Body({ mass: 0 });
+                wallBody.addShape(wallShape);
+                wallBody.position.set(...pos);
+                world.addBody(wallBody);
+            });
+        }
+
+        // 4. إنشاء شبكة طرق
+        function createRoadNetwork() {
+            const roadMaterial = new THREE.MeshStandardMaterial({
+                color: 0x333333,
+                roughness: 0.7,
+                metalness: 0.1
+            });
+
+            // الطرق الرئيسية
+            for (let i = -CITY_SIZE/2; i <= CITY_SIZE/2; i += 50) {
+                // طرق شمال-جنوب
+                const roadGeometry = new THREE.PlaneGeometry(CITY_SIZE, 10);
+                const road = new THREE.Mesh(roadGeometry, roadMaterial);
+                road.rotation.x = -Math.PI / 2;
+                road.position.set(i, 0.1, 0); // رفع قليلاً فوق الأرضية
+                road.receiveShadow = true;
+                scene.add(road);
+
+                // طرق شرق-غرب
+                if (i !== -CITY_SIZE/2) {
+                    const crossRoad = new THREE.Mesh(roadGeometry, roadMaterial);
+                    crossRoad.rotation.x = -Math.PI / 2;
+                    crossRoad.rotation.z = Math.PI / 2;
+                    crossRoad.position.set(0, 0.1, i);
+                    crossRoad.receiveShadow = true;
+                    scene.add(crossRoad);
+                }
+            }
+
+            // علامات الطريق
+            const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffff00 });
+            for (let i = -CITY_SIZE/2 + 25; i < CITY_SIZE/2; i += 50) {
+                const points = [];
+                for (let z = -CITY_SIZE/2; z <= CITY_SIZE/2; z += 2) {
+                    points.push(new THREE.Vector3(i, 0.15, z));
+                }
+                const geometry = new THREE.BufferGeometry().setFromPoints(points);
+                const line = new THREE.Line(geometry, lineMaterial);
+                scene.add(line);
+            }
+        }
+
+        // 5. إنشاء مباني واقعية
+        function createRealisticBuildings() {
+            const buildingTypes = [
+                { colors: [0xa0a0a0, 0x888888], windows: true },
+                { colors: [0x6a8ea0, 0x5a7e90], windows: true },
+                { colors: [0xc0a080, 0xb09070], windows: false },
+                { colors: [0x90a0b0, 0x8090a0], windows: true }
+            ];
+
+            for (let i = 0; i < MAX_BUILDINGS; i++) {
+                const type = buildingTypes[Math.floor(Math.random() * buildingTypes.length)];
+                const width = THREE.MathUtils.randFloat(8, 25);
+                const depth = THREE.MathUtils.randFloat(8, 25);
+                const height = THREE.MathUtils.randFloat(15, 60);
+
+                // تجنب وضع المباني على الطرق
+                let pos_x, pos_z;
+                let validPosition = false;
+                let attempts = 0;
+                
+                while (!validPosition && attempts < 100) {
+                    pos_x = THREE.MathUtils.randFloat(-CITY_SIZE/2 + 30, CITY_SIZE/2 - 30);
+                    pos_z = THREE.MathUtils.randFloat(-CITY_SIZE/2 + 30, CITY_SIZE/2 - 30);
+                    
+                    // التحقق من عدم وجود المبنى على الطريق
+                    const onRoad = Math.abs(pos_x % 50) < 15 || Math.abs(pos_z % 50) < 15;
+                    if (!onRoad) {
+                        validPosition = true;
+                    }
+                    attempts++;
+                }
+
+                if (!validPosition) continue;
+
+                // إنشاء المبنى الرئيسي
+                const geometry = new THREE.BoxGeometry(width, height, depth);
+                const material = new THREE.MeshStandardMaterial({
+                    color: type.colors[0],
+                    roughness: 0.6,
+                    metalness: 0.1
+                });
+                
+                const building = new THREE.Mesh(geometry, material);
+                building.position.set(pos_x, height/2, pos_z);
+                building.castShadow = true;
+                building.receiveShadow = true;
+                scene.add(building);
+
+                // إضافة نوافذ للواقعية
+                if (type.windows && height > 20) {
+                    createBuildingWindows(building, width, height, depth);
+                }
+
+                // إضافة سقف
+                const roofGeometry = new THREE.CylinderGeometry(width/1.5, width/2, 3, 8);
+                const roof = new THREE.Mesh(roofGeometry, new THREE.MeshStandardMaterial({
+                    color: 0x404040,
+                    roughness: 0.8
+                }));
+                roof.position.set(pos_x, height + 1.5, pos_z);
+                roof.castShadow = true;
+                scene.add(roof);
+
+                // الجسم الفيزيائي
+                const shape = new CANNON.Box(new CANNON.Vec3(width/2, height/2, depth/2));
+                const body = new CANNON.Body({ mass: 0 });
+                body.addShape(shape);
+                body.position.set(pos_x, height/2, pos_z);
+                world.addBody(body);
+            }
+        }
+
+        // 6. إضافة نوافذ للمباني
+        function createBuildingWindows(building, width, height, depth) {
+            const windowMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xffffaa,
+                transparent: true,
+                opacity: 0.8
+            });
+            const windowSpacing = 4;
+            
+            for (let h = 5; h < height - 5; h += windowSpacing) {
+                for (let w = -width/2 + 1; w < width/2 - 1; w += 3) {
+                    const windowGeometry = new THREE.PlaneGeometry(1.5, 2);
+                    const window1 = new THREE.Mesh(windowGeometry, windowMaterial);
+                    const window2 = new THREE.Mesh(windowGeometry, windowMaterial);
+                    
+                    window1.position.set(w, h, depth/2 + 0.1);
+                    window2.position.set(w, h, -depth/2 - 0.1);
+                    
+                    window1.rotation.y = 0;
+                    window2.rotation.y = Math.PI;
+                    
+                    building.add(window1);
+                    building.add(window2);
+                }
+            }
+        }
+
+        // 7. إضافة نباتات
+        function createVegetation() {
+            for (let i = 0; i < 80; i++) {
+                const treeHeight = THREE.MathUtils.randFloat(3, 8);
+                let pos_x, pos_z;
+                let validPosition = false;
+                let attempts = 0;
+                
+                while (!validPosition && attempts < 50) {
+                    pos_x = THREE.MathUtils.randFloat(-CITY_SIZE/2 + 10, CITY_SIZE/2 - 10);
+                    pos_z = THREE.MathUtils.randFloat(-CITY_SIZE/2 + 10, CITY_SIZE/2 - 10);
+                    
+                    // التحقق من عدم وجود الشجرة على الطريق
+                    const onRoad = Math.abs(pos_x % 50) < 10 || Math.abs(pos_z % 50) < 10;
+                    if (!onRoad) {
+                        validPosition = true;
+                    }
+                    attempts++;
+                }
+
+                if (!validPosition) continue;
+                
+                // جذع الشجرة
+                const trunkGeometry = new THREE.CylinderGeometry(0.3, 0.4, treeHeight, 8);
+                const trunk = new THREE.Mesh(trunkGeometry, new THREE.MeshStandardMaterial({
+                    color: 0x8B4513,
+                    roughness: 0.9
+                }));
+                trunk.position.set(pos_x, treeHeight/2, pos_z);
+                trunk.castShadow = true;
+                scene.add(trunk);
+                
+                // أوراق الشجرة
+                const leavesGeometry = new THREE.SphereGeometry(2, 8, 6);
+                const leaves = new THREE.Mesh(leavesGeometry, new THREE.MeshStandardMaterial({
+                    color: 0x228B22,
+                    roughness: 0.8
+                }));
+                leaves.position.set(pos_x, treeHeight + 1, pos_z);
+                leaves.castShadow = true;
+                scene.add(leaves);
+            }
+        }
+
+        // 8. إضافة سيارات
+        function createVehicles() {
+            for (let i = 0; i < 20; i++) {
+                const carType = Math.random() > 0.5 ? 'car' : 'truck';
+                const length = carType === 'car' ? 4 : 6;
+                const height = carType === 'car' ? 1.5 : 2.5;
+                const width = carType === 'car' ? 2 : 2.5;
+                
+                const geometry = new THREE.BoxGeometry(length, height, width);
+                const material = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color().setHSL(Math.random(), 0.7, 0.5),
+                    roughness: 0.4,
+                    metalness: 0.6
+                });
+                
+                const car = new THREE.Mesh(geometry, material);
+                
+                // وضع السيارة على الطريق
+                const roadPosition = Math.floor(Math.random() * 8) * 50 - CITY_SIZE/2 + 25;
+                const onRoad = Math.random() > 0.5;
+                
+                if (onRoad) {
+                    // على طريق شمال-جنوب
+                    car.position.set(roadPosition, height/2, THREE.MathUtils.randFloat(-CITY_SIZE/2 + 30, CITY_SIZE/2 - 30));
+                } else {
+                    // على طريق شرق-غرب
+                    car.position.set(THREE.MathUtils.randFloat(-CITY_SIZE/2 + 30, CITY_SIZE/2 - 30), height/2, roadPosition);
+                }
+                
+                car.castShadow = true;
+                scene.add(car);
+            }
+        }
+
+        // 9. إعداد إضاءة واقعية
+        function setupRealisticLighting() {
+            // ضوء النهار (الشمس)
+            const sunLight = new THREE.DirectionalLight(0xfff4e6, 2.5);
+            sunLight.position.set(200, 300, 100);
+            sunLight.castShadow = true;
+            sunLight.shadow.mapSize.width = 4096;
+            sunLight.shadow.mapSize.height = 4096;
+            sunLight.shadow.camera.left = -CITY_SIZE/2;
+            sunLight.shadow.camera.right = CITY_SIZE/2;
+            sunLight.shadow.camera.top = CITY_SIZE/2;
+            sunLight.shadow.camera.bottom = -CITY_SIZE/2;
+            sunLight.shadow.camera.near = 0.5;
+            sunLight.shadow.camera.far = 500;
+            sunLight.shadow.bias = -0.0001;
+            scene.add(sunLight);
+
+            // ضوء السماء
+            const hemiLight = new THREE.HemisphereLight(0x87a6d6, 0x3c3c3c, 0.6);
+            scene.add(hemiLight);
+
+            // أضواء اصطناعية (لمبات الشوارع)
+            for (let i = -CITY_SIZE/2 + 25; i <= CITY_SIZE/2 - 25; i += 50) {
+                const streetLight = new THREE.PointLight(0xfff4b3, 1, 50);
+                streetLight.position.set(i, 8, 0);
+                streetLight.castShadow = true;
+                scene.add(streetLight);
+                
+                const lampGeometry = new THREE.SphereGeometry(0.5, 8, 6);
+                const lamp = new THREE.Mesh(lampGeometry, new THREE.MeshBasicMaterial({ color: 0xffff00 }));
+                lamp.position.set(i, 8, 0);
+                scene.add(lamp);
+            }
+        }
+
+        // 10. إنشاء اللاعب
+        function createPlayer() {
+            const playerHeight = 4;
+            const playerRadius = 1;
+            const playerShape = new CANNON.Sphere(playerRadius);
+            
+            playerBody = new CANNON.Body({
+                mass: 5,
+                position: new CANNON.Vec3(0, playerHeight, 0),
+                shape: playerShape,
+                linearDamping: 0.92,
+                angularDamping: 0.95,
+                material: new CANNON.Material({ friction: 0.5, restitution: 0.3 })
+            });
+            
+            world.addBody(playerBody);
+
+            // جسم اللاعب المرئي
+            const playerGeometry = new THREE.SphereGeometry(playerRadius, 32, 32);
+            const playerMaterial = new THREE.MeshStandardMaterial({
+                color: 0x00ff88,
+                roughness: 0.3,
+                metalness: 0.5,
+                emissive: 0x003322,
+                emissiveIntensity: 0.2
+            });
+            
+            playerMesh = new THREE.Mesh(playerGeometry, playerMaterial);
+            playerMesh.castShadow = true;
+            playerMesh.receiveShadow = true;
+            scene.add(playerMesh);
+
+            // مستمع للاصطدامات
+            playerBody.addEventListener('collide', (event) => {
+                const contact = event.contact;
+                // التحقق من الاصطدام بالأرض أو الجدران
+                if (contact.ni.y > 0.5) {
+                    canJump = true;
+                    jumpsRemaining = MAX_JUMPS;
+                    energy = Math.min(100, energy + 20);
+                    updateEnergyBar();
+                }
+            });
+        }
+
+        // 11. نظام قفز متعدد مع طاقة
+        function jump() {
+            const currentTime = Date.now();
+            const timeSinceLastJump = currentTime - lastJumpTime;
+            
+            // تحقق من وجود طاقة كافية
+            if (energy < 20) {
+                showMessage("⚡ نفذت الطاقة! انتظر قليلاً");
+                return;
+            }
+
+            // تحقق من إمكانية القفز (زمن بين القفزات)
+            if (timeSinceLastJump < 300) return;
+            
+            // احتساب قوة القفز بناءً على الطاقة
+            const jumpStrength = BASE_JUMP_VELOCITY * (energy / 100);
+            
+            playerBody.velocity.y = jumpStrength;
+            canJump = false;
+            jumpsRemaining--;
+            energy = Math.max(0, energy - 25);
+            lastJumpTime = currentTime;
+            
+            updateEnergyBar();
+            
+            // رسالة بناءً على عدد القفزات المتبقية
+            if (jumpsRemaining > 0) {
+                showMessage(`⚡ قفزة ${MAX_JUMPS - jumpsRemaining + 1}/${MAX_JUMPS} (طاقة: ${Math.round(energy)}%)`);
+            }
+        }
+
+        // 12. تجديد الطاقة مع الوقت
+        function regenerateEnergy() {
+            if (energy < 100) {
+                energy = Math.min(100, energy + 0.5);
+                updateEnergyBar();
+            }
+        }
+
+        // 13. إعداد التحكم
+        function setupControls() {
+            const joystickArea = document.getElementById('joystick-area');
+            const joystickThumb = document.getElementById('joystick-thumb');
+            const jumpButton = document.getElementById('jump-button');
+            const lookArea = document.getElementById('look-area');
+
+            // تحديث موقع العصا
+            const rect = joystickArea.getBoundingClientRect();
+            joystickCenter.x = rect.left + JOYSTICK_RADIUS;
+            joystickCenter.y = rect.top + JOYSTICK_RADIUS;
+
+            // زر القفز
+            jumpButton.addEventListener('click', jump);
+            jumpButton.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                jump();
+            }, { passive: false });
+
+            // تحكم باللمس
+            document.addEventListener('touchstart', (event) => {
+                isMobile = true;
+                document.getElementById('mobile-controls').style.display = 'block';
+
+                for (let touch of event.changedTouches) {
+                    if (touch.clientX < window.innerWidth / 2) {
+                        activeTouchId = touch.identifier;
+                        joystickCenter.x = touch.clientX;
+                        joystickCenter.y = touch.clientY;
+                        
+                        joystickArea.style.left = `${touch.clientX - JOYSTICK_RADIUS}px`;
+                        joystickArea.style.top = `${touch.clientY - JOYSTICK_RADIUS}px`;
+                        
+                        touch.target.lastX = touch.clientX;
+                        touch.target.lastY = touch.clientY;
+                    } else {
+                        touch.target.lastX = touch.clientX;
+                        touch.target.lastY = touch.clientY;
+                    }
+                }
+            }, { passive: false });
+
+            document.addEventListener('touchmove', (event) => {
+                event.preventDefault();
+                
+                for (let touch of event.changedTouches) {
+                    // التحكم بالرؤية
+                    if (touch.clientX >= window.innerWidth / 2 || touch.identifier !== activeTouchId) {
+                        if (touch.target.lastX !== undefined) {
+                            controls.yaw -= (touch.clientX - touch.target.lastX) * 0.004;
+                            controls.pitch -= (touch.clientY - touch.target.lastY) * 0.004;
+                            controls.pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, controls.pitch));
+                        }
+                    }
+
+                    // تحريك العصا
+                    if (touch.identifier === activeTouchId) {
+                        const dx = touch.clientX - joystickCenter.x;
+                        const dy = touch.clientY - joystickCenter.y;
+                        const distance = Math.min(JOYSTICK_RADIUS, Math.sqrt(dx * dx + dy * dy));
+                        const angle = Math.atan2(dy, dx);
+
+                        joystickThumb.style.transform = 
+                            `translate(calc(-50% + ${Math.cos(angle) * distance}px), calc(-50% + ${Math.sin(angle) * distance}px))`;
+
+                        const threshold = 0.2;
+                        const normalizedX = Math.cos(angle) * (distance / JOYSTICK_RADIUS);
+                        const normalizedY = Math.sin(angle) * (distance / JOYSTICK_RADIUS);
+
+                        moveForward = normalizedY < -threshold;
+                        moveBackward = normalizedY > threshold;
+                        moveLeft = normalizedX < -threshold;
+                        moveRight = normalizedX > threshold;
+                    }
+                    
+                    touch.target.lastX = touch.clientX;
+                    touch.target.lastY = touch.clientY;
+                }
+            }, { passive: false });
+
+            document.addEventListener('touchend', (event) => {
+                for (let touch of event.changedTouches) {
+                    if (touch.identifier === activeTouchId) {
+                        joystickThumb.style.transform = 'translate(-50%, -50%)';
+                        moveForward = moveBackward = moveLeft = moveRight = false;
+                        activeTouchId = null;
+                        
+                        joystickArea.style.left = `25px`;
+                        joystickArea.style.top = `${window.innerHeight - 25 - JOYSTICK_RADIUS * 2}px`;
+                        joystickCenter.x = 25 + JOYSTICK_RADIUS;
+                        joystickCenter.y = window.innerHeight - 25 - JOYSTICK_RADIUS;
+                    }
+                }
+            });
+
+            // تحكم بالماوس (للكمبيوتر)
+            const element = document.body;
+            element.addEventListener('click', () => {
+                if (!isMobile && !document.pointerLockElement) {
+                    element.requestPointerLock();
+                }
+            });
+
+            document.addEventListener('mousemove', (event) => {
+                if (document.pointerLockElement === element) {
+                    controls.yaw -= event.movementX * 0.002;
+                    controls.pitch -= event.movementY * 0.002;
+                    controls.pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, controls.pitch));
+                }
+            });
+
+            document.addEventListener('keydown', (event) => {
+                isMobile = false;
+                switch (event.code) {
+                    case 'KeyW': moveForward = true; break;
+                    case 'KeyS': moveBackward = true; break;
+                    case 'KeyA': moveLeft = true; break;
+                    case 'KeyD': moveRight = true; break;
+                    case 'Space': jump(); break;
+                }
+            });
+
+            document.addEventListener('keyup', (event) => {
+                switch (event.code) {
+                    case 'KeyW': moveForward = false; break;
+                    case 'KeyS': moveBackward = false; break;
+                    case 'KeyA': moveLeft = false; break;
+                    case 'KeyD': moveRight = false; break;
+                }
+            });
+
+            document.addEventListener('pointerlockchange', () => {
+                if (document.pointerLockElement === element) {
+                    document.getElementById('overlay').style.display = 'none';
+                } else if (!isMobile) {
+                    document.getElementById('overlay').style.display = 'flex';
+                }
+            });
+        }
+
+        // 14. حركة اللاعب
+        const forwardVector = new THREE.Vector3();
+        const rightVector = new THREE.Vector3();
+        const tempForce = new CANNON.Vec3();
+        const movementForce = 400;
+
+        function updatePlayerMovement(delta) {
+            if (!isAuthReady) return;
+
+            // تحديث الجسم المرئي
+            playerMesh.position.copy(playerBody.position);
+            playerMesh.quaternion.copy(playerBody.quaternion);
+
+            // حساب الاتجاهات
+            forwardVector.set(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), controls.yaw);
+            rightVector.set(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), controls.yaw);
+
+            let force = tempForce.set(0, 0, 0);
+
+            if (moveForward) force.vadd(new CANNON.Vec3(forwardVector.x * movementForce, 0, forwardVector.z * movementForce), force);
+            if (moveBackward) force.vsub(new CANNON.Vec3(forwardVector.x * movementForce, 0, forwardVector.z * movementForce), force);
+            if (moveRight) force.vadd(new CANNON.Vec3(rightVector.x * movementForce, 0, rightVector.z * movementForce), force);
+            if (moveLeft) force.vsub(new CANNON.Vec3(rightVector.x * movementForce, 0, rightVector.z * movementForce), force);
+
+            playerBody.applyForce(force, playerBody.position);
+
+            // تحديد السرعة القصوى
+            let currentVelocity = playerBody.velocity;
+            let speed = Math.sqrt(currentVelocity.x * currentVelocity.x + currentVelocity.z * currentVelocity.z);
+
+            if (speed > maxSpeed) {
+                const scale = maxSpeed / speed;
+                playerBody.velocity.x *= scale;
+                playerBody.velocity.z *= scale;
+            }
+
+            // التحقق من أن اللاعب لم يسقط من المدينة
+            if (playerBody.position.y < -100) {
+                // إعادة اللاعب إلى المركز
+                playerBody.position.set(0, 10, 0);
+                playerBody.velocity.set(0, 0, 0);
+                showMessage("🔄 تم إعادتك إلى المدينة");
+            }
+
+            // تحديث الكاميرا
+            camera.position.set(playerBody.position.x, playerBody.position.y + 2, playerBody.position.z + 3);
+            camera.rotation.order = 'YXZ';
+            camera.rotation.y = controls.yaw;
+            camera.rotation.x = controls.pitch;
+        }
+
+        // 15. إنشاء العدو
+        function createEnemy() {
+            const enemyRadius = 2;
+            const enemyShape = new CANNON.Sphere(enemyRadius);
+            
+            enemyBody = new CANNON.Body({
+                mass: 15,
+                position: new CANNON.Vec3(50, 5, 50),
+                shape: enemyShape,
+                linearDamping: 0.9,
+                angularDamping: 0.9,
+                material: new CANNON.Material({ friction: 0.1, restitution: 0.8 })
+            });
+            
+            world.addBody(enemyBody);
+
+            const geometry = new THREE.SphereGeometry(enemyRadius, 32, 32);
+            const material = new THREE.MeshStandardMaterial({
+                color: 0xff3333,
+                roughness: 0.3,
+                metalness: 0.7,
+                emissive: 0x330000,
+                emissiveIntensity: 0.3
+            });
+            
+            enemyMesh = new THREE.Mesh(geometry, material);
+            enemyMesh.castShadow = true;
+            enemyMesh.receiveShadow = true;
+            scene.add(enemyMesh);
+        }
+
+        // 16. ذكاء العدو
+        function updateEnemyAI(delta) {
+            if (!enemyBody) return;
+
+            const playerPos = playerBody.position;
+            const enemyPos = enemyBody.position;
+            const direction = new CANNON.Vec3(
+                playerPos.x - enemyPos.x,
+                0,
+                playerPos.z - enemyPos.z
+            ).normalize();
+
+            const distance = Math.sqrt(
+                Math.pow(playerPos.x - enemyPos.x, 2) +
+                Math.pow(playerPos.z - enemyPos.z, 2)
+            );
+
+            const chaseSpeed = 8;
+            
+            if (distance < 5) {
+                enemyBody.velocity.x = direction.x * chaseSpeed * 0.5;
+                enemyBody.velocity.z = direction.z * chaseSpeed * 0.5;
+            } else if (distance > 100) {
+                enemyBody.velocity.x = 0;
+                enemyBody.velocity.z = 0;
+            } else {
+                enemyBody.velocity.x = direction.x * chaseSpeed;
+                enemyBody.velocity.z = direction.z * chaseSpeed;
+            }
+
+            enemyMesh.position.copy(enemyBody.position);
+            enemyMesh.quaternion.copy(enemyBody.quaternion);
+        }
+
+        // 17. حلقة اللعبة الرئيسية
+        function animate(time) {
+            requestAnimationFrame(animate);
+
+            if (lastTime === undefined) {
+                lastTime = time;
+                return;
+            }
+            
+            const delta = (time - lastTime) / 1000;
+            lastTime = time;
+
+            // تحديث الفيزياء
+            world.step(1 / 60, delta, 3);
+
+            // تحديث حركة اللاعب
+            updatePlayerMovement(delta);
+
+            // تحديث حركة العدو
+            updateEnemyAI(delta);
+
+            // تجديد الطاقة
+            regenerateEnergy();
+
+            // تحريك السيارات بشكل بسيط
+            animateVehicles(time);
+
+            // العرض
+            renderer.render(scene, camera);
+        }
+
+        // 18. تحريك السيارات
+        function animateVehicles(time) {
+            const cars = scene.children.filter(child => 
+                child.type === 'Mesh' && child.geometry.type === 'BoxGeometry' && child.material.color
+            );
+            
+            cars.forEach((car, index) => {
+                const speed = 0.05;
+                
+                // تحريك السيارات على الطرق
+                if (Math.abs(car.position.x % 50) < 10) {
+                    // على طريق شمال-جنوب
+                    car.position.z += speed;
+                    if (car.position.z > CITY_SIZE/2 - 30) car.position.z = -CITY_SIZE/2 + 30;
+                } else {
+                    // على طريق شرق-غرب
+                    car.position.x += speed;
+                    if (car.position.x > CITY_SIZE/2 - 30) car.position.x = -CITY_SIZE/2 + 30;
+                }
+            });
+        }
+
+        // 19. معالجة تغيير حجم النافذة
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            if (isMobile) {
+                const joystickArea = document.getElementById('joystick-area');
+                joystickArea.style.top = `${window.innerHeight - 25 - JOYSTICK_RADIUS * 2}px`;
+                joystickCenter.x = 25 + JOYSTICK_RADIUS;
+                joystickCenter.y = window.innerHeight - 25 - JOYSTICK_RADIUS;
+            }
+        }
+
+        // بدء اللعبة
+        document.getElementById('startButton').addEventListener('click', () => {
+            init();
+            animate();
+            document.getElementById('overlay').style.display = 'none';
+            showMessage("🏙️ مرحباً بكم في مدينة الواقع!");
+        });
+
+        // إعداد أولي
+        window.addEventListener('load', () => {
+            isMobile = window.innerWidth <= 768;
+            if (isMobile) {
+                const joystickArea = document.getElementById('joystick-area');
+                joystickArea.style.top = `${window.innerHeight - 25 - JOYSTICK_RADIUS * 2}px`;
+                document.getElementById('mobile-controls').style.display = 'block';
+            }
+            onWindowResize();
+        });
+
+        window.addEventListener('orientationchange', () => {
+            isMobile = window.innerWidth <= 768;
+            onWindowResize();
+        });
+    </script>
+</body>
+</html>
