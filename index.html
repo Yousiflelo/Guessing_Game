@@ -1,391 +1,361 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>Whispers of the Oasis</title>
-  <style>
-    html, body { margin: 0; height: 100%; background: #0c0f13; color: #e9f0f5; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
-    #game { width: 100vw; height: 100vh; display: block; touch-action: none; }
-    #hud { position: fixed; top: 0; left: 0; width: 100%; padding: 12px; display: flex; justify-content: space-between; align-items: center; pointer-events: none; z-index: 10; }
-    #title { font-weight: 800; letter-spacing: 0.4px; opacity: 0.95; }
-    #action { pointer-events: auto; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.16); padding: 8px 14px; border-radius: 12px; backdrop-filter: blur(6px); }
-    #hint { position: fixed; bottom: 18px; right: 18px; font-size: 12px; opacity: 0.7; max-width: 220px; line-height: 1.4; }
-    #dialog { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: rgba(20,24,30,0.85); border: 1px solid rgba(255,255,255,0.12); padding: 10px 14px; border-radius: 12px; max-width: 80vw; display: none; }
-    #dialog b { color: #a8d47a; }
-    #joystick { position: fixed; left: 18px; bottom: 18px; width: 120px; height: 120px; border-radius: 50%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); display: grid; place-items: center; touch-action: none; z-index: 10; }
-    #stick { width: 54px; height: 54px; border-radius: 50%; background: linear-gradient(180deg,#cfe1ff,#88a7ff); box-shadow: 0 8px 20px rgba(136,167,255,0.35); }
-    #buttons { position: fixed; right: 18px; bottom: 18px; display: grid; gap: 10px; z-index: 10; }
-    .btn { width: 56px; height: 56px; border-radius: 14px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.16); display: grid; place-items: center; color: #e9f0f5; font-weight: 700; backdrop-filter: blur(6px); touch-action: none; }
-    .toast { position: fixed; top: 64px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15); color: #e9f0f5; padding: 8px 12px; border-radius: 10px; display: none; }
-  </style>
-  <script defer src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>The Void Walker - لعبة المستكشف</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; touch-action: none; }
+        #ui { position: absolute; top: 20px; right: 20px; color: #fff; pointer-events: none; text-shadow: 0 0 10px #0ff; z-index: 10; }
+        h1 { margin: 0; font-size: 24px; letter-spacing: 2px; }
+        p { font-size: 16px; opacity: 0.8; }
+        #story-overlay {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            text-align: center; color: white; background: rgba(0,0,0,0.8); padding: 40px;
+            border: 1px solid #0ff; box-shadow: 0 0 30px #0ff; border-radius: 10px;
+            display: flex; flex-direction: column; align-items: center; z-index: 20;
+        }
+        #start-btn {
+            background: transparent; border: 2px solid #0ff; color: #0ff; padding: 10px 30px;
+            font-size: 18px; cursor: pointer; margin-top: 20px; transition: 0.3s;
+            text-transform: uppercase; font-weight: bold;
+        }
+        #start-btn:hover { background: #0ff; color: #000; box-shadow: 0 0 20px #0ff; }
+        
+        /* Joystick for Mobile */
+        #joystick-zone {
+            position: absolute; bottom: 50px; left: 50px; width: 120px; height: 120px;
+            background: rgba(255, 255, 255, 0.1); border-radius: 50%; border: 2px solid rgba(0, 255, 255, 0.3);
+            display: none; /* Shown via JS on touch devices */
+            touch-action: none;
+        }
+        #joystick-knob {
+            width: 50px; height: 50px; background: rgba(0, 255, 255, 0.8); border-radius: 50%;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            box-shadow: 0 0 15px #0ff;
+        }
+    </style>
 </head>
 <body>
-  <div id="hud">
-    <div id="title">Whispers of the Oasis</div>
-    <div id="action">تفاعل</div>
-  </div>
 
-  <div id="hint">اسحب العصا للحركة. اضغط “تفاعل” عند ظهور الوميض الأخضر. أكمل 4 مرايا ضوء لإحياء الواحة.</div>
-  <div id="dialog"></div>
-  <div id="joystick"><div id="stick"></div></div>
+    <div id="ui">
+        <h1>THE VOID WALKER</h1>
+        <p>الهدف: اجمع <span id="score">0</span> / 5 مكعبات ذهبية</p>
+    </div>
 
-  <div id="buttons">
-    <div class="btn" id="jumpBtn">قفز</div>
-    <div class="btn" id="lightBtn">ضوء</div>
-  </div>
+    <div id="story-overlay">
+        <h2>قصة اللعبة</h2>
+        <p style="line-height: 1.6; max-width: 400px;">
+            لقد استيقظت في "عالم الفراغ". لا توجد ملامح بشرية هنا، فقط هندسة معمارية غريبة.
+            تقول الأسطورة أن هناك 5 قطع ذهبية تحتوي على طاقة الحياة.
+            <br><br>
+            <strong>اجمعها لتعيد بناء الواقع.</strong>
+        </p>
+        <button id="start-btn">ابدأ الرحلة</button>
+    </div>
 
-  <canvas id="game"></canvas>
-  <div class="toast" id="toast"></div>
+    <div id="joystick-zone"><div id="joystick-knob"></div></div>
 
-  <script>
-    // ==== قصة قصيرة ====
-    const Story = {
-      step: 0,
-      lines: [
-        "<b>أمّ السواقي:</b> مرحباً أيها الرحّال. الواحة تموت، والظلال تسرق الماء.",
-        "<b>أمّ السواقي:</b> فعّل مرايا الضوء الأربع. كل مرآة تعيد جزءاً من الروح.",
-        "<b>أمّ السواقي:</b> اتبع الوميض الأخضر بين النخيل… ولا تخشَ الليل.",
-        "<b>أمّ السواقي:</b> جميل! الضوء بدأ يعود. تابع، فالقلب ينتظر."
-      ]
-    };
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/simplex-noise/2.4.0/simplex-noise.min.js"></script>
 
-    // ==== Three.js الأساس ====
-    const canvas = document.getElementById('game');
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    <script>
+        // --- إعدادات اللعبة ---
+        let scene, camera, renderer;
+        let cubes = [], targets = [];
+        let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
+        let prevTime = performance.now();
+        let velocity = new THREE.Vector3();
+        let direction = new THREE.Vector3();
+        let score = 0;
+        let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        // --- إعدادات العالم ---
+        const worldWidth = 100;
+        const worldDepth = 100;
+        
+        init();
+        animate();
 
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0c0f13);
+        function init() {
+            // 1. إنشاء المشهد
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x050510); // لون خلفية داكن
+            scene.fog = new THREE.FogExp2(0x050510, 0.035); // ضباب كثيف للغموض
 
-    const camera = new THREE.PerspectiveCamera(62, 1, 0.1, 600);
-    camera.position.set(6, 4, 8);
+            // 2. الكاميرا
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.y = 2; // ارتفاع اللاعب
 
-    const sun = new THREE.DirectionalLight(0xfff0cc, 1.1);
-    sun.position.set(12, 14, 6);
-    sun.castShadow = true;
-    sun.shadow.mapSize.set(1024, 1024);
-    scene.add(sun);
-    scene.add(new THREE.AmbientLight(0x2e3a46, 0.55));
+            // 3. الإضاءة (سر الروعة)
+            const ambientLight = new THREE.HemisphereLight(0xeeeeff, 0x777788, 0.5);
+            scene.add(ambientLight);
 
-    // أرض رملية
-    const ground = new THREE.Mesh(
-      new THREE.PlaneGeometry(120, 120),
-      new THREE.MeshStandardMaterial({ color: 0xc9b27d, roughness: 0.95, metalness: 0.0 })
-    );
-    ground.rotation.x = -Math.PI/2;
-    ground.receiveShadow = true;
-    scene.add(ground);
+            const dirLight = new THREE.DirectionalLight(0xffaa00, 0.8); // ضوء شمس برتقالي
+            dirLight.position.set(50, 50, 50);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 2048; // ظل عالي الجودة
+            dirLight.shadow.mapSize.height = 2048;
+            scene.add(dirLight);
 
-    // كتل حجرية مزخرفة (لإبراز الحواف)
-    const blocks = new THREE.Group();
-    scene.add(blocks);
-    for (let i = 0; i < 22; i++) {
-      const s = 0.8 + Math.random()*0.8;
-      const box = new THREE.Mesh(
-        new THREE.BoxGeometry(s, s, s),
-        new THREE.MeshStandardMaterial({ color: new THREE.Color().setHSL(0.08 + Math.random()*0.05, 0.45, 0.55), roughness: 0.6, metalness: 0.08 })
-      );
-      box.position.set((Math.random()-0.5)*16, s/2, (Math.random()-0.5)*16);
-      box.castShadow = true;
-      blocks.add(box);
-    }
+            // ضوء نيون من الأسفل
+            const pointLight = new THREE.PointLight(0x00ffff, 1, 20);
+            camera.add(pointLight);
+            scene.add(camera);
 
-    // نخلة مبسطة
-    function addPalm(x,z) {
-      const trunk = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.15, 0.26, 3.2, 12),
-        new THREE.MeshStandardMaterial({ color: 0x8b5a2b, roughness: 0.85 })
-      );
-      trunk.position.set(x, 1.6, z);
-      trunk.castShadow = true;
-      scene.add(trunk);
+            // 4. بناء العالم (Floor & Cubes)
+            const geometry = new THREE.BoxGeometry(1, 1, 1);
+            
+            // مادة المكعبات (شادر واقعي)
+            const material = new THREE.MeshStandardMaterial({
+                color: 0x222222,
+                roughness: 0.1,
+                metalness: 0.8,
+            });
 
-      const crown = new THREE.Mesh(
-        new THREE.SphereGeometry(0.7, 18, 12),
-        new THREE.MeshStandardMaterial({ color: 0x2e7d32, roughness: 0.6 })
-      );
-      crown.position.set(x, 3.1, z);
-      crown.castShadow = true;
-      scene.add(crown);
-      return { trunk, crown };
-    }
-    addPalm(-3,-2); addPalm(4,1); addPalm(-6,5);
+            // مادة الحواف (للتصميم الجميل)
+            const lineMaterial = new THREE.LineBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.3 });
 
-    // مرايا الضوء (أهداف القصة)
-    const mirrors = [];
-    function addMirror(x,z) {
-      const frame = new THREE.Mesh(
-        new THREE.TorusGeometry(0.9, 0.06, 16, 64),
-        new THREE.MeshStandardMaterial({ color: 0xa8d47a, emissive: 0x113315, roughness: 0.4, metalness: 0.2 })
-      );
-      frame.position.set(x, 1.2, z);
-      frame.castShadow = true;
-      scene.add(frame);
+            // الأرضية
+            const floorGeo = new THREE.PlaneGeometry(200, 200);
+            const floorMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8 });
+            const floor = new THREE.Mesh(floorGeo, floorMat);
+            floor.rotation.x = -Math.PI / 2;
+            floor.receiveShadow = true;
+            scene.add(floor);
 
-      const plane = new THREE.Mesh(
-        new THREE.CircleGeometry(0.75, 48),
-        new THREE.MeshStandardMaterial({ color: 0x1a2a33, roughness: 0.2, metalness: 0.4, envMapIntensity: 0.6 })
-      );
-      plane.position.set(x, 1.2, z);
-      plane.rotation.x = -Math.PI/2;
-      plane.receiveShadow = true;
-      scene.add(plane);
+            // توليد عشوائي للمباني
+            for (let i = 0; i < 400; i++) {
+                const mesh = new THREE.Mesh(geometry, material);
+                
+                // موقع عشوائي
+                mesh.position.x = (Math.random() - 0.5) * 100;
+                mesh.position.z = (Math.random() - 0.5) * 100;
+                
+                // حجم عشوائي (ناطحات سحاب)
+                const height = Math.random() * 10 + 1;
+                mesh.scale.set(Math.random() * 2 + 1, height, Math.random() * 2 + 1);
+                mesh.position.y = height / 2;
 
-      mirrors.push({ frame, plane, active: false });
-    }
-    addMirror(2, -4);
-    addMirror(-5, 3);
-    addMirror(6, 6);
-    addMirror(-8, -7);
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
+                
+                // إضافة حواف جميلة
+                const edges = new THREE.EdgesGeometry(geometry);
+                const line = new THREE.LineSegments(edges, lineMaterial);
+                mesh.add(line); // ربط الحواف بالمكعب
 
-    // لاعب مبسط
-    const playerGeo = new THREE.CapsuleGeometry(0.25, 0.9, 10, 18);
-    const playerMat = new THREE.MeshStandardMaterial({ color: 0xd9d2c2, roughness: 0.7, metalness: 0.0 });
-    const player = new THREE.Mesh(playerGeo, playerMat);
-    player.castShadow = true;
-    player.position.set(0, 0.8, 0);
-    scene.add(player);
+                scene.add(mesh);
+                cubes.push(mesh);
+            }
 
-    // كاميرا متابعة خفيفة
-    const camPivot = new THREE.Object3D();
-    scene.add(camPivot);
+            // توليد الأهداف (المكعبات الذهبية)
+            const targetGeo = new THREE.OctahedronGeometry(0.5);
+            const targetMat = new THREE.MeshStandardMaterial({ 
+                color: 0xffd700, 
+                emissive: 0xffa500,
+                emissiveIntensity: 1,
+                roughness: 0,
+                metalness: 1
+            });
 
-    // شادر حواف (بوست بروسس بسيط)
-    const rt = new THREE.WebGLRenderTarget(1,1, { samples: renderer.capabilities.isWebGL2 ? 4 : 0 });
-    const quadScene = new THREE.Scene();
-    const orthoCam = new THREE.OrthographicCamera(-1,1,1,-1,0,1);
-    const edgeMaterial = new THREE.ShaderMaterial({
-      uniforms: {
-        tDiffuse: { value: null },
-        resolution: { value: new THREE.Vector2(1,1) },
-        outlineStrength: { value: 1.0 },
-        rimStrength: { value: 0.6 },
-        tone: { value: new THREE.Color(0.96,0.98,1.0) },
-      },
-      vertexShader: `
-        varying vec2 vUv;
-        void main(){ vUv = uv; gl_Position = vec4(position,1.0); }
-      `,
-      fragmentShader: `
-        precision highp float;
-        varying vec2 vUv;
-        uniform sampler2D tDiffuse;
-        uniform vec2 resolution;
-        uniform float outlineStrength;
-        uniform float rimStrength;
-        uniform vec3 tone;
-        vec3 sample(vec2 uv){ return texture2D(tDiffuse, uv).rgb; }
-        void main(){
-          vec2 texel = 1.0 / resolution;
-          vec3 tl=sample(vUv+texel*vec2(-1.0,-1.0));
-          vec3 t =sample(vUv+texel*vec2( 0.0,-1.0));
-          vec3 tr=sample(vUv+texel*vec2( 1.0,-1.0));
-          vec3 l =sample(vUv+texel*vec2(-1.0, 0.0));
-          vec3 c =sample(vUv);
-          vec3 r =sample(vUv+texel*vec2( 1.0, 0.0));
-          vec3 bl=sample(vUv+texel*vec2(-1.0, 1.0));
-          vec3 b =sample(vUv+texel*vec2( 0.0, 1.0));
-          vec3 br=sample(vUv+texel*vec2( 1.0, 1.0));
-          vec3 gx = -tl - 2.0*l - bl + tr + 2.0*r + br;
-          vec3 gy = -tl - 2.0*t - tr + bl + 2.0*b + br;
-          float edge = length(gx + gy);
-          float rim = smoothstep(0.0,1.0, dot(normalize(vec2(0.6,0.8)), normalize(vUv-0.5)));
-          vec3 color = c + rim*rimStrength*0.25;
-          color = mix(color, tone, clamp(edge*outlineStrength, 0.0, 1.0)*0.35);
-          gl_FragColor = vec4(color,1.0);
+            for(let i=0; i<5; i++) {
+                const target = new THREE.Mesh(targetGeo, targetMat);
+                target.position.set((Math.random() - 0.5) * 60, 1, (Math.random() - 0.5) * 60);
+                
+                // ضوء خاص للهدف
+                const tLight = new THREE.PointLight(0xffa500, 2, 5);
+                target.add(tLight);
+                
+                scene.add(target);
+                targets.push(target);
+            }
+
+            // 5. الريندر (المُصير)
+            renderer = new THREE.WebGLRenderer({ antialias: true }); // حواف ناعمة
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            document.body.appendChild(renderer.domElement);
+
+            // 6. التحكم
+            setupControls();
+
+            window.addEventListener('resize', onWindowResize);
         }
-      `
-    });
-    const quad = new THREE.Mesh(new THREE.PlaneGeometry(2,2), edgeMaterial);
-    quadScene.add(quad); quadScene.add(orthoCam);
 
-    // تحسين القياس
-    function resize(){
-      const w = window.innerWidth, h = window.innerHeight;
-      renderer.setSize(w,h,false);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.6));
-      camera.aspect = w/h; camera.updateProjectionMatrix();
-      rt.setSize(w,h);
-      edgeMaterial.uniforms.resolution.value.set(w,h);
-    }
-    window.addEventListener('resize', resize); resize();
+        // --- منطق التحكم (كمبيوتر + موبايل) ---
+        function setupControls() {
+            const startBtn = document.getElementById('start-btn');
+            const overlay = document.getElementById('story-overlay');
+            const joystickZone = document.getElementById('joystick-zone');
 
-    // تحكم بالعصا للموبايل
-    const joy = { base: document.getElementById('joystick'), stick: document.getElementById('stick'), active:false, dx:0, dy:0 };
-    joy.base.addEventListener('touchstart', e=>{
-      joy.active = true;
-    }, {passive:true});
-    joy.base.addEventListener('touchend', e=>{
-      joy.active = false; joy.dx=0; joy.dy=0; joy.stick.style.transform = 'translate(0,0)';
-    });
-    joy.base.addEventListener('touchmove', e=>{
-      const t = e.touches[0];
-      const rect = joy.base.getBoundingClientRect();
-      const cx = rect.left + rect.width/2;
-      const cy = rect.top + rect.height/2;
-      let dx = t.clientX - cx;
-      let dy = t.clientY - cy;
-      const max = rect.width/2 - 8;
-      const len = Math.hypot(dx,dy);
-      if (len > max) { dx *= max/len; dy *= max/len; }
-      joy.dx = dx/max; joy.dy = dy/max;
-      joy.stick.style.transform = `translate(${dx}px,${dy}px)`;
-    }, {passive:true});
+            startBtn.addEventListener('click', () => {
+                overlay.style.display = 'none';
+                
+                // تفعيل الماوس للكمبيوتر
+                if (!isMobile) {
+                    document.body.requestPointerLock();
+                } else {
+                    // تفعيل الجويستيك للموبايل
+                    joystickZone.style.display = 'block';
+                    initTouchControls();
+                }
+            });
 
-    // أزرار
-    const jumpBtn = document.getElementById('jumpBtn');
-    const lightBtn = document.getElementById('lightBtn');
-    jumpBtn.addEventListener('touchstart', ()=> jump());
-    lightBtn.addEventListener('touchstart', ()=> toggleLantern());
-    document.getElementById('action').addEventListener('click', ()=> interact());
+            // كيبورد للكمبيوتر
+            document.addEventListener('keydown', (event) => {
+                switch (event.code) {
+                    case 'ArrowUp': case 'KeyW': moveForward = true; break;
+                    case 'ArrowLeft': case 'KeyA': moveLeft = true; break;
+                    case 'ArrowDown': case 'KeyS': moveBackward = true; break;
+                    case 'ArrowRight': case 'KeyD': moveRight = true; break;
+                }
+            });
+            document.addEventListener('keyup', (event) => {
+                switch (event.code) {
+                    case 'ArrowUp': case 'KeyW': moveForward = false; break;
+                    case 'ArrowLeft': case 'KeyA': moveLeft = false; break;
+                    case 'ArrowDown': case 'KeyS': moveBackward = false; break;
+                    case 'ArrowRight': case 'KeyD': moveRight = false; break;
+                }
+            });
 
-    // HUD
-    const dialog = document.getElementById('dialog');
-    const toast = document.getElementById('toast');
-    function showDialog(text, ms=2600){
-      dialog.innerHTML = text;
-      dialog.style.display = 'block';
-      setTimeout(()=> dialog.style.display='none', ms);
-    }
-    function showToast(text, ms=1800){
-      toast.innerText = text;
-      toast.style.display = 'block';
-      setTimeout(()=> toast.style.display='none', ms);
-    }
-
-    // حركة اللاعب
-    const vel = new THREE.Vector3(0,0,0);
-    let onGround = true;
-    function jump(){
-      if (onGround){ vel.y = 3.6; onGround = false; showToast("قفزة أنيقة!"); }
-    }
-
-    // فانوس
-    let lanternOn = false;
-    const lantern = new THREE.PointLight(0xa8d47a, 0.0, 10, 1.8);
-    scene.add(lantern);
-    function toggleLantern(){
-      lanternOn = !lanternOn;
-      lantern.intensity = lanternOn ? 1.4 : 0.0;
-      showToast(lanternOn ? "أشعلت الضوء" : "أطفأت الضوء");
-    }
-
-    // القصة: التقدّم عبر تفعيل المرايا
-    function near(a,b, d=1.6){ return a.position.distanceTo(b.position) < d; }
-    function interact(){
-      // ظهور السطر التالي من القصة عند أول تفاعل
-      if (Story.step < Story.lines.length){
-        showDialog(Story.lines[Story.step], 2800);
-        Story.step++;
-        return;
-      }
-      // محاولة تفعيل مرآة قريبة
-      for (const m of mirrors){
-        if (!m.active && near(player, m.frame)){
-          m.active = true;
-          m.frame.material.emissive.set(0x66ff88);
-          m.frame.material.color.set(0xcfffd8);
-          showToast("تم تفعيل المرآة!");
-          checkWin();
-          break;
+            // حركة الماوس (دوران الكاميرا)
+            document.addEventListener('mousemove', (event) => {
+                if (document.pointerLockElement === document.body) {
+                    camera.rotation.y -= event.movementX * 0.002;
+                    camera.rotation.x -= event.movementY * 0.002;
+                    // تقييد النظر للأعلى والأسفل
+                    camera.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, camera.rotation.x));
+                }
+            });
         }
-      }
-    }
-    function checkWin(){
-      const done = mirrors.filter(m=>m.active).length;
-      if (done === mirrors.length){
-        showDialog("<b>أمّ السواقي:</b> أعدت الحياة! الماء سيعود، والواحة ستزهر.", 3600);
-        // مؤثر بصري احتفالي بسيط
-        edgeMaterial.uniforms.outlineStrength.value = 1.4;
-        edgeMaterial.uniforms.rimStrength.value = 0.9;
-      } else {
-        showDialog(`<b>أمّ السواقي:</b> مرآة مفعّلة (${done}/4). تابع الوميض الأخضر.`, 2400);
-      }
-    }
 
-    // وميض مرشد (روح نباتية)
-    const guide = new THREE.Mesh(
-      new THREE.SphereGeometry(0.18, 16, 16),
-      new THREE.MeshStandardMaterial({ color: 0x66ff88, emissive: 0x113315, roughness: 0.4 })
-    );
-    guide.position.set(1.2, 1.2, -2.0);
-    scene.add(guide);
+        // تحكم اللمس (موبايل)
+        function initTouchControls() {
+            const joyZone = document.getElementById('joystick-zone');
+            const joyKnob = document.getElementById('joystick-knob');
+            let joyStartX, joyStartY;
+            let touchId = null;
 
-    // نهار/ليل بسيط
-    let time = 0;
-    function updateDayNight(dt){
-      time += dt*0.02;
-      const k = 0.5 + 0.5*Math.sin(time);
-      sun.intensity = 0.8 + 0.6*k;
-      renderer.toneMappingExposure = 0.9 + 0.3*k;
-      edgeMaterial.uniforms.tone.value.setScalar(0.94 + 0.05*k);
-    }
+            // حركة الجويستيك (المشي)
+            joyZone.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const touch = e.changedTouches[0];
+                touchId = touch.identifier;
+                joyStartX = touch.clientX;
+                joyStartY = touch.clientY;
+            }, {passive: false});
 
-    // حركة وإتباع كاميرا
-    function updatePlayer(dt){
-      const speed = 3.0;
-      const moveX = joy.dx;
-      const moveY = joy.dy;
-      // اتجاه الحركة في مستوى الأرض
-      const dir = new THREE.Vector3(moveX, 0, moveY);
-      if (dir.lengthSq() > 1e-4){
-        dir.normalize().multiplyScalar(speed);
-        player.rotation.y = Math.atan2(dir.x, dir.z);
-      }
-      // فيزيائية بسيطة
-      vel.x = dir.x;
-      vel.z = dir.z;
-      vel.y -= 9.8 * dt; // جاذبية
-      player.position.addScaledVector(vel, dt);
-      if (player.position.y <= 0.8){ player.position.y = 0.8; vel.y = 0; onGround = true; }
+            joyZone.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    if (e.changedTouches[i].identifier === touchId) {
+                        const touch = e.changedTouches[i];
+                        let dx = touch.clientX - joyStartX;
+                        let dy = touch.clientY - joyStartY;
+                        
+                        // تحديد مسافة الجويستيك
+                        const distance = Math.min(Math.sqrt(dx*dx + dy*dy), 35);
+                        const angle = Math.atan2(dy, dx);
+                        
+                        const mx = Math.cos(angle) * distance;
+                        const my = Math.sin(angle) * distance;
 
-      // الكاميرا تتبع من خلف بزاوية لطيفة
-      const offset = new THREE.Vector3(0, 3.6, 6.5);
-      camPivot.position.lerp(player.position, 0.15);
-      camera.position.copy(camPivot.position).add(offset);
-      camera.lookAt(player.position.x, player.position.y + 0.8, player.position.z);
-      lantern.position.copy(player.position).add(new THREE.Vector3(0.0, 0.9, 0.0));
-    }
+                        joyKnob.style.transform = `translate(calc(-50% + ${mx}px), calc(-50% + ${my}px))`;
 
-    // حركة الوميض المرشد نحو أقرب مرآة غير مفعّلة
-    function updateGuide(dt){
-      const target = mirrors.find(m=>!m.active);
-      if (!target){ guide.visible = false; return; }
-      guide.visible = true;
-      const to = target.frame.position.clone().add(new THREE.Vector3(0, 0.9, 0));
-      const delta = to.clone().sub(guide.position).multiplyScalar(0.8*dt);
-      guide.position.add(delta);
-      guide.position.y += Math.sin(time*4.0)*0.004; // تذبذب لطيف
-    }
+                        // تحويل حركة الجويستيك إلى حركة لاعب
+                        moveForward = my < -10;
+                        moveBackward = my > 10;
+                        moveLeft = mx < -10;
+                        moveRight = mx > 10;
+                    }
+                }
+            }, {passive: false});
 
-    // حلقة الرسم مع الشادر
-    let last = performance.now();
-    function loop(now){
-      const dt = Math.min(0.033, (now - last) / 1000); last = now;
+            joyZone.addEventListener('touchend', (e) => {
+                moveForward = moveBackward = moveLeft = moveRight = false;
+                joyKnob.style.transform = `translate(-50%, -50%)`;
+            });
 
-      updatePlayer(dt);
-      updateGuide(dt);
-      updateDayNight(dt);
+            // دوران الكاميرا (لمس الشاشة في أي مكان آخر)
+            let lastTouchX = 0;
+            document.addEventListener('touchstart', (e) => {
+                 // تجاهل لمس الجويستيك
+                if (e.target.id !== 'joystick-knob' && e.target.id !== 'joystick-zone') {
+                    lastTouchX = e.touches[0].clientX;
+                }
+            });
 
-      // رسم للمخزن
-      renderer.setRenderTarget(rt);
-      renderer.render(scene, camera);
-      renderer.setRenderTarget(null);
+            document.addEventListener('touchmove', (e) => {
+                if (e.target.id !== 'joystick-knob' && e.target.id !== 'joystick-zone') {
+                    const touchX = e.touches[0].clientX;
+                    const deltaX = touchX - lastTouchX;
+                    camera.rotation.y -= deltaX * 0.005;
+                    lastTouchX = touchX;
+                }
+            });
+        }
 
-      // تطبيق شادر الحواف
-      edgeMaterial.uniforms.tDiffuse.value = rt.texture;
-      renderer.render(quadScene, orthoCam);
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
 
-      requestAnimationFrame(loop);
-    }
-    requestAnimationFrame(loop);
+        // --- حلقة اللعبة (Animation Loop) ---
+        function animate() {
+            requestAnimationFrame(animate);
 
-    // بداية القصة
-    setTimeout(()=> showDialog(Story.lines[Story.step++], 2800), 800);
-  </script>
+            const time = performance.now();
+            const delta = (time - prevTime) / 1000;
+
+            // 1. فيزياء الحركة
+            velocity.x -= velocity.x * 10.0 * delta;
+            velocity.z -= velocity.z * 10.0 * delta;
+
+            direction.z = Number(moveForward) - Number(moveBackward);
+            direction.x = Number(moveRight) - Number(moveLeft);
+            direction.normalize(); // لتوحيد السرعة في الاتجاهات القطرية
+
+            if (moveForward || moveBackward) velocity.z -= direction.z * 400.0 * delta;
+            if (moveLeft || moveRight) velocity.x -= direction.x * 400.0 * delta;
+
+            // تطبيق الحركة بناءً على اتجاه الكاميرا
+            const rotation = camera.rotation.y;
+            const dx = velocity.x * delta;
+            const dz = velocity.z * delta;
+
+            camera.position.x -= Math.sin(rotation) * dz + Math.cos(rotation) * dx;
+            camera.position.z -= Math.cos(rotation) * dz - Math.sin(rotation) * dx;
+
+            // 2. تحريك الأهداف (Animation)
+            targets.forEach((target, index) => {
+                target.rotation.x += 2 * delta;
+                target.rotation.y += 2 * delta;
+                // حركة عائمة
+                target.position.y = 1 + Math.sin(time * 0.003 + index) * 0.3;
+
+                // التحقق من الجمع (Collision Detection بسيط)
+                if (camera.position.distanceTo(target.position) < 2) {
+                    scene.remove(target);
+                    targets.splice(index, 1);
+                    score++;
+                    document.getElementById('score').innerText = score;
+                    if(score === 5) alert("✨ مبروك! لقد أعدت بناء الواقع! ✨");
+                }
+            });
+
+            // التحقق من الحدود (عالم لانهائي وهمي) - إعادة اللاعب إذا ابتعد
+            if (camera.position.x > 100) camera.position.x = -100;
+            if (camera.position.x < -100) camera.position.x = 100;
+            if (camera.position.z > 100) camera.position.z = -100;
+            if (camera.position.z < -100) camera.position.z = 100;
+
+            prevTime = time;
+            renderer.render(scene, camera);
+        }
+    </script>
 </body>
 </html>
