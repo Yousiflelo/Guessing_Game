@@ -1,376 +1,546 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neon Void Runner Mobile</title>
-    <style>
-        body {
-            margin: 0;
-            overflow: hidden; /* Prevent scrolling */
-            background-color: #050505;
-            font-family: 'Courier New', Courier, monospace;
-            touch-action: none; /* Disables browser gestures like swipe-to-refresh */
-        }
-
-        #gameCanvas {
-            display: block;
-            background: linear-gradient(to bottom, #0f0c29, #302b63, #24243e);
-            width: 100%;
-            height: 100%;
-        }
-
-        #ui-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        .score-board {
-            padding: 20px;
-            font-size: 24px;
-            font-weight: bold;
-            color: white;
-            text-shadow: 0 0 10px #00ffff;
-        }
-
-        /* Instructions for touch zones */
-        .controls-hint {
-            position: absolute;
-            bottom: 20px;
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            padding: 0 40px;
-            box-sizing: border-box;
-            color: rgba(255, 255, 255, 0.3);
-            font-size: 14px;
-            pointer-events: none;
-        }
-
-        #startScreen, #gameOverScreen {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-            background: rgba(0, 0, 0, 0.85);
-            padding: 30px;
-            width: 80%; /* Responsive width */
-            max-width: 400px;
-            border-radius: 10px;
-            border: 1px solid #00ffff;
-            pointer-events: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            z-index: 10;
-        }
-
-        #gameOverScreen { display: none; }
-
-        h1 { margin: 0; color: #00ffff; text-transform: uppercase; letter-spacing: 2px; font-size: 24px; }
-        p { color: #ddd; font-size: 14px; }
-        
-        button {
-            background: transparent;
-            color: #00ffff;
-            border: 2px solid #00ffff;
-            padding: 15px 30px; /* Larger touch target */
-            font-size: 18px;
-            cursor: pointer;
-            font-family: inherit;
-            text-transform: uppercase;
-            font-weight: bold;
-            touch-action: manipulation; /* Improves tap response */
-        }
-
-        button:active {
-            background: #00ffff;
-            color: black;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <title>Random Garden Quest</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Bootstrap CSS -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #111827;
+      --accent: #22c55e;
+      --accent2: #38bdf8;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --danger: #ef4444;
+      --gold: #f59e0b;
+    }
+    body {
+      background: radial-gradient(1200px 600px at 20% 10%, #0b1220 0%, var(--bg) 60%);
+      color: var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+      min-height: 100vh;
+    }
+    .game-card {
+      background: linear-gradient(180deg, #0d1324 0%, var(--card) 100%);
+      border: 1px solid #1f2937;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+      border-radius: 16px;
+    }
+    .title {
+      letter-spacing: 0.5px;
+    }
+    .pill {
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-weight: 600;
+    }
+    .btn-accent {
+      background: var(--accent);
+      color: #052e1b;
+      border: none;
+    }
+    .btn-accent:hover { filter: brightness(1.05); }
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid #1f2937;
+      color: var(--text);
+    }
+    .meter {
+      height: 10px;
+      background: #0b1220;
+      border: 1px solid #1f2937;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .meter > span {
+      display: block;
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      width: 0%;
+      transition: width 200ms ease;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+    }
+    .tile {
+      background: #0b1220;
+      border: 1px solid #1f2937;
+      border-radius: 10px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+      font-weight: 700;
+      color: var(--muted);
+    }
+    .tile:hover { transform: translateY(-2px); border-color: #334155; }
+    .tile.good { background: rgba(34,197,94,0.12); color: #86efac; border-color: #14532d; }
+    .tile.bad { background: rgba(239,68,68,0.12); color: #fecaca; border-color: #7f1d1d; }
+    .tile.special { background: rgba(245,158,11,0.12); color: #fde68a; border-color: #78350f; }
+    .fade-enter { animation: fadeIn 240ms ease both; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    .badge {
+      background: #0b1220;
+      border: 1px solid #1f2937;
+      color: var(--muted);
+    }
+    .score { font-weight: 800; color: var(--accent2); }
+    .combo { font-weight: 800; color: var(--gold); }
+    .danger { color: var(--danger); }
+    .hint { color: var(--muted); font-size: 0.95rem; }
+    .footer-note { color: var(--muted); font-size: 0.85rem; }
+    .achv {
+      background: #0b1220;
+      border: 1px solid #1f2937;
+      border-radius: 10px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .achv .icon {
+      width: 28px; height: 28px;
+      display: grid; place-items: center;
+      border-radius: 50%;
+      background: rgba(245,158,11,0.15);
+      color: var(--gold);
+      font-weight: 900;
+    }
+    .achv .name { font-weight: 700; }
+    .achv .desc { color: var(--muted); font-size: 0.9rem; }
+    .modal-content {
+      background: linear-gradient(180deg, #0d1324 0%, var(--card) 100%);
+      color: var(--text);
+      border: 1px solid #1f2937;
+    }
+    .link {
+      color: var(--accent2);
+      text-decoration: none;
+    }
+    .link:hover { text-decoration: underline; }
+  </style>
 </head>
 <body>
+  <div class="container py-4">
+    <div class="row justify-content-center">
+      <div class="col-lg-10">
+        <div class="p-4 p-md-5 game-card fade-enter">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <h1 class="title h3 mb-0">🌱 Random Garden Quest</h1>
+            <div class="d-flex gap-2">
+              <span class="badge pill">Round: <span id="round">1</span></span>
+              <span class="badge pill">Time: <span id="time">30</span>s</span>
+              <span class="badge pill">Lives: <span id="lives">3</span></span>
+            </div>
+          </div>
 
-    <canvas id="gameCanvas"></canvas>
-    
-    <div id="ui-layer">
-        <div class="score-board">Score: <span id="scoreVal">0</span></div>
-        <div class="controls-hint">
-            <span>&lt; Tap Left</span>
-            <span>Tap Right &gt;</span>
+          <p class="hint mb-3">
+            **Goal:** Click good tiles (sprouts 🌿) and avoid weeds 🪤. Specials ⭐ give surprises. Each round randomizes rules—stay sharp!
+          </p>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <div class="meter"><span id="progress"></span></div>
+              <div class="mt-2">
+                <span class="score">Score: <span id="score">0</span></span>
+                <span class="ms-3 combo">Combo: <span id="combo">x1</span></span>
+              </div>
+            </div>
+            <div class="col-md-6 text-md-end">
+              <button id="startBtn" class="btn btn-accent pill me-2">Start / Next Round</button>
+              <button id="resetBtn" class="btn btn-ghost pill">Reset</button>
+            </div>
+          </div>
+
+          <div class="grid mb-3" id="grid"></div>
+
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <span class="badge me-2">Rule: <span id="ruleText">Click sprouts 🌿, avoid weeds 🪤</span></span>
+              <span class="badge">Mode: <span id="modeText">Classic</span></span>
+            </div>
+            <div>
+              <button class="btn btn-ghost pill" data-bs-toggle="modal" data-bs-target="#achievementsModal">Achievements</button>
+              <button class="btn btn-ghost pill" data-bs-toggle="modal" data-bs-target="#leaderboardModal">Leaderboard</button>
+            </div>
+          </div>
         </div>
+
+        <p class="footer-note mt-3">
+          Tip: Fast streaks boost combo and score. Specials can flip rules, add time, or spawn bonus tiles. Every round is different.
+        </p>
+      </div>
     </div>
+  </div>
 
-    <div id="startScreen">
-        <h1>Neon Void</h1>
-        <p>Tap <strong>Left</strong> or <strong>Right</strong> side of screen to move.</p>
-        <button id="startBtn">Start Mission</button>
+  <!-- Achievements Modal -->
+  <div class="modal fade" id="achievementsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content p-3">
+        <div class="modal-header">
+          <h5 class="modal-title">🏆 Achievements</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="achievementsList">
+          <!-- Filled by JS -->
+        </div>
+      </div>
     </div>
+  </div>
 
-    <div id="gameOverScreen">
-        <h1 style="color:#ff0055">Mission Failed</h1>
-        <p>Final Score: <span id="finalScore">0</span></p>
-        <button id="restartBtn">Retry</button>
+  <!-- Leaderboard Modal -->
+  <div class="modal fade" id="leaderboardModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content p-3">
+        <div class="modal-header">
+          <h5 class="modal-title">📈 Leaderboard (Local)</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div id="leaderboard"></div>
+          <div class="mt-3">
+            <label class="form-label">Your name</label>
+            <input type="text" id="playerName" class="form-control" placeholder="هيثم" />
+            <button id="saveScoreBtn" class="btn btn-accent pill mt-2">Save current score</button>
+          </div>
+        </div>
+      </div>
     </div>
+  </div>
 
-<script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    const scoreEl = document.getElementById('scoreVal');
-    const startScreen = document.getElementById('startScreen');
-    const gameOverScreen = document.getElementById('gameOverScreen');
-    const finalScoreEl = document.getElementById('finalScore');
-    const startBtn = document.getElementById('startBtn');
-    const restartBtn = document.getElementById('restartBtn');
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // --- Utility RNG & helpers ---
+    const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+    const sample = (arr) => arr[Math.floor(Math.random() * arr.length)];
+    const shuffle = (arr) => arr.sort(() => Math.random() - 0.5);
 
-    // Game State
-    let isPlaying = false;
-    let score = 0;
-    let gameSpeed = 3;
-    let animationId;
-    let lastTime = 0;
-
-    // Player Object
-    const player = {
-        x: 0,
-        y: 0,
-        w: 40,
-        h: 40,
-        color: '#00ffff',
-        speed: 0 // Speed is calculated based on screen width
+    // --- Game state ---
+    const state = {
+      round: 1,
+      time: 30,
+      lives: 3,
+      score: 0,
+      combo: 1,
+      targetHits: 0,
+      targetGoal: 10,
+      running: false,
+      mode: "Classic",
+      rule: "Click sprouts 🌿, avoid weeds 🪤",
+      tiles: [],
+      timerId: null,
+      achievements: new Set(JSON.parse(localStorage.getItem("achievements") || "[]")),
+      leaderboard: JSON.parse(localStorage.getItem("leaderboard") || "[]"),
     };
 
-    let obstacles = [];
-    let particles = [];
-    let stars = [];
+    // --- DOM refs ---
+    const el = {
+      round: document.getElementById("round"),
+      time: document.getElementById("time"),
+      lives: document.getElementById("lives"),
+      score: document.getElementById("score"),
+      combo: document.getElementById("combo"),
+      progress: document.getElementById("progress"),
+      grid: document.getElementById("grid"),
+      ruleText: document.getElementById("ruleText"),
+      modeText: document.getElementById("modeText"),
+      startBtn: document.getElementById("startBtn"),
+      resetBtn: document.getElementById("resetBtn"),
+      achievementsList: document.getElementById("achievementsList"),
+      leaderboard: document.getElementById("leaderboard"),
+      playerName: document.getElementById("playerName"),
+      saveScoreBtn: document.getElementById("saveScoreBtn"),
+    };
 
-    // Inputs
-    let rightPressed = false;
-    let leftPressed = false;
+    // --- Modes & rules ---
+    const MODES = [
+      { name: "Classic", rule: "Click sprouts 🌿, avoid weeds 🪤", good: "🌿", bad: "🪤", special: "⭐" },
+      { name: "Nightfall", rule: "Only click glowing tiles ⭐—others may be weeds", good: "⭐", bad: "🪤", special: "🌿" },
+      { name: "Harvest Rush", rule: "Collect fruits 🍓 fast—weeds reduce lives", good: "🍓", bad: "🪤", special: "⭐" },
+      { name: "Mystery Mix", rule: "Symbols shuffle—watch the rule text!", good: "🌱", bad: "🪲", special: "🎁" },
+      { name: "Flip Chance", rule: "Specials may flip good/bad mid-round", good: "🌿", bad: "🪤", special: "🔄" },
+    ];
 
-    // --- RESIZE HANDLING ---
-    function resizeGame() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        
-        // Adjust player position relative to new screen size
-        player.y = canvas.height - 100;
-        // Keep player inside screen if resized
-        if(player.x > canvas.width) player.x = canvas.width / 2;
-        
-        // Adjust speed based on screen width (faster on wider screens)
-        player.speed = canvas.width * 0.015; 
-        if(player.speed < 4) player.speed = 4; // Min speed
+    const ACHIEVEMENTS = [
+      { id: "firstBlood", name: "First Sprout", desc: "Score your first good tile." },
+      { id: "comboMaster", name: "Combo Master", desc: "Reach combo x5." },
+      { id: "ironGardener", name: "Iron Gardener", desc: "Finish a round without losing a life." },
+      { id: "speedPlanter", name: "Speed Planter", desc: "Hit 5 good tiles in 5 seconds." },
+      { id: "goldenHarvest", name: "Golden Harvest", desc: "Score 500+ in a single round." },
+    ];
+
+    // --- Rendering ---
+    function renderHUD() {
+      el.round.textContent = state.round;
+      el.time.textContent = state.time;
+      el.lives.textContent = state.lives;
+      el.score.textContent = state.score;
+      el.combo.textContent = "x" + state.combo;
+      el.ruleText.textContent = state.rule;
+      el.modeText.textContent = state.mode;
+      const pct = Math.min(100, Math.floor((state.targetHits / state.targetGoal) * 100));
+      el.progress.style.width = pct + "%";
     }
-    window.addEventListener('resize', resizeGame);
-    resizeGame(); // Initial call
 
-    // --- TOUCH CONTROLS ---
-    document.addEventListener('touchstart', handleTouch, {passive: false});
-    document.addEventListener('touchend', endTouch, {passive: false});
-    
-    // Also keep keyboard for desktop testing
-    document.addEventListener('keydown', (e) => {
-        if(e.key === 'ArrowRight') rightPressed = true;
-        if(e.key === 'ArrowLeft') leftPressed = true;
+    function renderGrid() {
+      el.grid.innerHTML = "";
+      state.tiles.forEach((t, idx) => {
+        const div = document.createElement("div");
+        div.className = "tile";
+        div.dataset.index = idx;
+        div.textContent = t.symbol;
+        if (t.type === "good") div.classList.add("good");
+        if (t.type === "bad") div.classList.add("bad");
+        if (t.type === "special") div.classList.add("special");
+        el.grid.appendChild(div);
+      });
+    }
+
+    function renderAchievements() {
+      el.achievementsList.innerHTML = "";
+      ACHIEVEMENTS.forEach(a => {
+        const unlocked = state.achievements.has(a.id);
+        const row = document.createElement("div");
+        row.className = "achv mb-2";
+        row.innerHTML = `
+          <div class="icon">${unlocked ? "🏅" : "🔒"}</div>
+          <div>
+            <div class="name">${a.name}</div>
+            <div class="desc">${a.desc}</div>
+          </div>
+        `;
+        el.achievementsList.appendChild(row);
+      });
+    }
+
+    function renderLeaderboard() {
+      const list = [...state.leaderboard].sort((a,b) => b.score - a.score).slice(0, 10);
+      el.leaderboard.innerHTML = list.length
+        ? list.map((e, i) => `<div class="d-flex justify-content-between mb-1"><span>#${i+1} — ${e.name}</span><strong>${e.score}</strong></div>`).join("")
+        : "<div class='hint'>No scores yet. Play a round and save!</div>";
+    }
+
+    // --- Round generation ---
+    function generateRound() {
+      const mode = sample(MODES);
+      state.mode = mode.name;
+      state.rule = mode.rule;
+
+      const size = 25; // 5x5
+      const goodCount = randInt(7, 11);
+      const badCount = randInt(6, 10);
+      const specialCount = randInt(2, 4);
+
+      const tiles = [];
+      for (let i = 0; i < goodCount; i++) tiles.push({ type: "good", symbol: mode.good });
+      for (let i = 0; i < badCount; i++) tiles.push({ type: "bad", symbol: mode.bad });
+      for (let i = 0; i < specialCount; i++) tiles.push({ type: "special", symbol: mode.special });
+      while (tiles.length < size) tiles.push({ type: "bad", symbol: mode.bad });
+      shuffle(tiles);
+
+      // Random dynamic: some tiles change every few seconds
+      const dynamicSlots = randInt(3, 6);
+      for (let i = 0; i < dynamicSlots; i++) {
+        const idx = randInt(0, size - 1);
+        tiles[idx].dynamic = true;
+      }
+
+      state.tiles = tiles;
+      state.targetHits = 0;
+      state.targetGoal = randInt(8, 12);
+      state.time = randInt(22, 35);
+      state.lives = Math.min(5, 2 + Math.floor(state.round / 2));
+      state.combo = 1;
+      renderHUD();
+      renderGrid();
+    }
+
+    // --- Timers & dynamics ---
+    function startTimer() {
+      clearInterval(state.timerId);
+      state.running = true;
+      state.timerId = setInterval(() => {
+        state.time--;
+        // Flip dynamic tiles occasionally
+        if (Math.random() < 0.25) {
+          const idx = randInt(0, state.tiles.length - 1);
+          const t = state.tiles[idx];
+          if (t.dynamic) {
+            const flip = sample(["good", "bad", "special"]);
+            const mode = MODES.find(m => m.name === state.mode);
+            t.type = flip;
+            t.symbol = flip === "good" ? mode.good : flip === "bad" ? mode.bad : mode.special;
+            renderGrid();
+          }
+        }
+        // Flip rule on Flip Chance mode via special trigger
+        if (state.mode === "Flip Chance" && Math.random() < 0.08) {
+          const mode = MODES.find(m => m.name === "Flip Chance");
+          const tmp = mode.good;
+          mode.good = mode.bad;
+          mode.bad = tmp;
+          state.rule = "Rules flipped! Watch symbols.";
+          renderHUD();
+        }
+
+        renderHUD();
+        if (state.time <= 0) endRound(false);
+      }, 1000);
+    }
+
+    function stopTimer() {
+      clearInterval(state.timerId);
+      state.running = false;
+    }
+
+    // --- Scoring & events ---
+    function addScore(base) {
+      const gained = Math.floor(base * state.combo);
+      state.score += gained;
+      renderHUD();
+      if (state.score >= 500) unlock("goldenHarvest");
+    }
+
+    function loseLife() {
+      state.lives--;
+      state.combo = 1;
+      renderHUD();
+      if (state.lives <= 0) endRound(false);
+    }
+
+    function unlock(id) {
+      if (!state.achievements.has(id)) {
+        state.achievements.add(id);
+        localStorage.setItem("achievements", JSON.stringify([...state.achievements]));
+        renderAchievements();
+      }
+    }
+
+    // --- Round end ---
+    function endRound(won) {
+      stopTimer();
+      state.running = false;
+      const msg = won
+        ? "🌟 Round complete! Great job."
+        : "💀 Round over. Try again!";
+      const bonus = won ? 100 + randInt(0, 100) : 0;
+      state.score += bonus;
+      if (won && state.lives >= 2) unlock("ironGardener");
+      alert(`${msg}\nScore bonus: ${bonus}\nTotal score: ${state.score}`);
+    }
+
+    // --- Input handling ---
+    el.grid.addEventListener("click", (e) => {
+      const tile = e.target.closest(".tile");
+      if (!tile || !state.running) return;
+      const idx = Number(tile.dataset.index);
+      const t = state.tiles[idx];
+
+      if (t.type === "good") {
+        addScore(25);
+        state.targetHits++;
+        state.combo = Math.min(10, state.combo + 0.25);
+        tile.classList.add("good");
+        tile.style.transform = "scale(0.96)";
+        setTimeout(() => (tile.style.transform = ""), 120);
+        if (state.targetHits === 1) unlock("firstBlood");
+        if (state.combo >= 5) unlock("comboMaster");
+        if (state.targetHits >= state.targetGoal) endRound(true);
+      } else if (t.type === "bad") {
+        loseLife();
+        tile.classList.add("bad");
+        tile.style.transform = "scale(1.06)";
+        setTimeout(() => (tile.style.transform = ""), 120);
+      } else if (t.type === "special") {
+        // Random special effects
+        const effect = sample(["time+", "time-", "combo+", "flip", "bonus", "spawn"]);
+        if (effect === "time+") { state.time = Math.min(state.time + 5, 45); }
+        if (effect === "time-") { state.time = Math.max(state.time - 5, 5); }
+        if (effect === "combo+") { state.combo = Math.min(10, state.combo + 1); }
+        if (effect === "flip") {
+          // Flip a random tile type
+          const j = randInt(0, state.tiles.length - 1);
+          const tt = state.tiles[j];
+          const mode = MODES.find(m => m.name === state.mode);
+          const flip = sample(["good", "bad"]);
+          tt.type = flip;
+          tt.symbol = flip === "good" ? mode.good : mode.bad;
+          renderGrid();
+        }
+        if (effect === "bonus") { addScore(100); }
+        if (effect === "spawn") {
+          // Spawn extra good tiles
+          for (let k = 0; k < 3; k++) {
+            const j = randInt(0, state.tiles.length - 1);
+            const mode = MODES.find(m => m.name === state.mode);
+            state.tiles[j] = { type: "good", symbol: mode.good, dynamic: true };
+          }
+          renderGrid();
+        }
+        renderHUD();
+      }
     });
-    document.addEventListener('keyup', (e) => {
-        if(e.key === 'ArrowRight') rightPressed = false;
-        if(e.key === 'ArrowLeft') leftPressed = false;
+
+    // --- Buttons ---
+    el.startBtn.addEventListener("click", () => {
+      state.round++;
+      generateRound();
+      startTimer();
     });
 
-    function handleTouch(e) {
-        if(!isPlaying) return;
-        // e.preventDefault(); // Stop scrolling
-        const touchX = e.touches[0].clientX;
-        const middle = window.innerWidth / 2;
-        
-        if (touchX < middle) {
-            leftPressed = true;
-            rightPressed = false;
-        } else {
-            rightPressed = true;
-            leftPressed = false;
+    el.resetBtn.addEventListener("click", () => {
+      stopTimer();
+      state.round = 1;
+      state.score = 0;
+      state.combo = 1;
+      state.lives = 3;
+      state.time = 30;
+      generateRound();
+      renderAchievements();
+      renderLeaderboard();
+    });
+
+    el.saveScoreBtn.addEventListener("click", () => {
+      const name = (el.playerName.value || "هيثم").trim();
+      state.leaderboard.push({ name, score: state.score, date: Date.now() });
+      localStorage.setItem("leaderboard", JSON.stringify(state.leaderboard));
+      renderLeaderboard();
+    });
+
+    // --- Init ---
+    generateRound();
+    renderAchievements();
+    renderLeaderboard();
+
+    // Speed Planter tracker
+    (function trackSpeedPlanter() {
+      let hits = 0;
+      let windowStart = Date.now();
+      el.grid.addEventListener("click", (e) => {
+        const tile = e.target.closest(".tile");
+        if (!tile || !state.running) return;
+        const idx = Number(tile.dataset.index);
+        const t = state.tiles[idx];
+        const now = Date.now();
+        if (now - windowStart > 5000) { hits = 0; windowStart = now; }
+        if (t.type === "good") {
+          hits++;
+          if (hits >= 5) unlock("speedPlanter");
         }
-    }
-
-    function endTouch(e) {
-        // When finger lifts, stop moving
-        leftPressed = false;
-        rightPressed = false;
-    }
-
-    // --- BUTTON LISTENERS ---
-    // Using touchstart for buttons makes them feel more responsive on mobile
-    startBtn.addEventListener('click', startGame);
-    restartBtn.addEventListener('click', startGame);
-
-
-    // --- GAME LOGIC ---
-
-    function initStars() {
-        stars = [];
-        for(let i=0; i<80; i++){
-            stars.push({
-                x: Math.random() * canvas.width,
-                y: Math.random() * canvas.height,
-                size: Math.random() * 2,
-                speed: Math.random() * 1 + 0.5
-            });
-        }
-    }
-
-    function createObstacle() {
-        const size = Math.random() * 30 + 20; 
-        const obstacle = {
-            x: Math.random() * (canvas.width - size),
-            y: -60,
-            w: size,
-            h: size,
-            color: `hsl(${Math.random() * 60 + 300}, 100%, 60%)`,
-            speed: gameSpeed + Math.random() * 2
-        };
-        obstacles.push(obstacle);
-    }
-
-    function createExplosion(x, y, color) {
-        for(let i=0; i<15; i++){
-            particles.push({
-                x: x, y: y,
-                vx: (Math.random() - 0.5) * 10,
-                vy: (Math.random() - 0.5) * 10,
-                life: 1, color: color
-            });
-        }
-    }
-
-    function drawPlayer() {
-        ctx.fillStyle = player.color;
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = player.color;
-        
-        ctx.beginPath();
-        ctx.moveTo(player.x + player.w/2, player.y);
-        ctx.lineTo(player.x + player.w, player.y + player.h);
-        ctx.lineTo(player.x, player.y + player.h);
-        ctx.fill();
-        ctx.shadowBlur = 0;
-    }
-
-    function update() {
-        if (!isPlaying) return;
-
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Background
-        ctx.fillStyle = 'white';
-        stars.forEach(star => {
-            ctx.beginPath(); ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2); ctx.fill();
-            star.y += star.speed;
-            if(star.y > canvas.height) star.y = 0;
-        });
-
-        // Move Player
-        if (rightPressed && player.x < canvas.width - player.w) player.x += player.speed;
-        if (leftPressed && player.x > 0) player.x -= player.speed;
-        drawPlayer();
-
-        // Spawning logic adjusted for different screen widths
-        // We spawn less often on wider screens to balance difficulty, or more often based on needs.
-        // Simplified: Random chance based on score
-        if (Math.random() < 0.02 + (score * 0.00005)) { 
-            createObstacle();
-        }
-
-        // Obstacles
-        obstacles.forEach((obs, index) => {
-            obs.y += obs.speed;
-            ctx.fillStyle = obs.color;
-            ctx.shadowBlur = 10; ctx.shadowColor = obs.color;
-            ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
-            ctx.shadowBlur = 0;
-
-            // Collision
-            if (
-                player.x < obs.x + obs.w &&
-                player.x + player.w > obs.x &&
-                player.y < obs.y + obs.h &&
-                player.y + player.h > obs.y
-            ) {
-                gameOver();
-            }
-
-            if (obs.y > canvas.height) {
-                obstacles.splice(index, 1);
-                score += 10;
-                scoreEl.innerText = score;
-                if(score % 100 === 0) gameSpeed += 0.5;
-            }
-        });
-
-        // Particles
-        particles.forEach((p, index) => {
-            p.x += p.vx; p.y += p.vy; p.life -= 0.05;
-            ctx.globalAlpha = p.life; ctx.fillStyle = p.color;
-            ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI*2); ctx.fill();
-            ctx.globalAlpha = 1.0;
-            if(p.life <= 0) particles.splice(index, 1);
-        });
-
-        animationId = requestAnimationFrame(update);
-    }
-
-    function startGame() {
-        startScreen.style.display = 'none';
-        gameOverScreen.style.display = 'none';
-        
-        score = 0;
-        gameSpeed = 3 + (canvas.height * 0.001); // Faster starting speed on taller screens
-        scoreEl.innerText = '0';
-        obstacles = [];
-        particles = [];
-        
-        resizeGame(); // Ensure size is correct
-        player.x = canvas.width / 2 - player.w/2;
-        
-        isPlaying = true;
-        initStars();
-        update();
-    }
-
-    function gameOver() {
-        isPlaying = false;
-        cancelAnimationFrame(animationId);
-        createExplosion(player.x + player.w/2, player.y + player.h/2, '#00ffff');
-        
-        // Render one frame of explosion
-        const endFrame = () => {
-            ctx.clearRect(0,0,canvas.width, canvas.height);
-            stars.forEach(s => { ctx.fillStyle='white'; ctx.beginPath(); ctx.arc(s.x, s.y, s.size, 0, Math.PI*2); ctx.fill(); });
-            particles.forEach(p => {
-                p.x += p.vx; p.y += p.vy; p.life -= 0.05;
-                if(p.life > 0) {
-                    ctx.globalAlpha = p.life; ctx.fillStyle = p.color;
-                    ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI*2); ctx.fill();
-                }
-            });
-            if(particles.length > 0) requestAnimationFrame(endFrame);
-        }
-        endFrame();
-
-        finalScoreEl.innerText = score;
-        setTimeout(() => {
-            gameOverScreen.style.display = 'flex';
-        }, 800);
-    }
-</script>
+      });
+    })();
+  </script>
 </body>
 </html>
