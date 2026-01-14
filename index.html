@@ -1,546 +1,136 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
-  <title>Random Garden Quest</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- Bootstrap CSS -->
-  <link
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-    rel="stylesheet"
-  />
-  <style>
-    :root {
-      --bg: #0f172a;
-      --card: #111827;
-      --accent: #22c55e;
-      --accent2: #38bdf8;
-      --text: #e5e7eb;
-      --muted: #9ca3af;
-      --danger: #ef4444;
-      --gold: #f59e0b;
-    }
-    body {
-      background: radial-gradient(1200px 600px at 20% 10%, #0b1220 0%, var(--bg) 60%);
-      color: var(--text);
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
-      min-height: 100vh;
-    }
-    .game-card {
-      background: linear-gradient(180deg, #0d1324 0%, var(--card) 100%);
-      border: 1px solid #1f2937;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
-      border-radius: 16px;
-    }
-    .title {
-      letter-spacing: 0.5px;
-    }
-    .pill {
-      border-radius: 999px;
-      padding: 6px 12px;
-      font-weight: 600;
-    }
-    .btn-accent {
-      background: var(--accent);
-      color: #052e1b;
-      border: none;
-    }
-    .btn-accent:hover { filter: brightness(1.05); }
-    .btn-ghost {
-      background: transparent;
-      border: 1px solid #1f2937;
-      color: var(--text);
-    }
-    .meter {
-      height: 10px;
-      background: #0b1220;
-      border: 1px solid #1f2937;
-      border-radius: 999px;
-      overflow: hidden;
-    }
-    .meter > span {
-      display: block;
-      height: 100%;
-      background: linear-gradient(90deg, var(--accent), var(--accent2));
-      width: 0%;
-      transition: width 200ms ease;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 10px;
-    }
-    .tile {
-      background: #0b1220;
-      border: 1px solid #1f2937;
-      border-radius: 10px;
-      height: 64px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      user-select: none;
-      transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
-      font-weight: 700;
-      color: var(--muted);
-    }
-    .tile:hover { transform: translateY(-2px); border-color: #334155; }
-    .tile.good { background: rgba(34,197,94,0.12); color: #86efac; border-color: #14532d; }
-    .tile.bad { background: rgba(239,68,68,0.12); color: #fecaca; border-color: #7f1d1d; }
-    .tile.special { background: rgba(245,158,11,0.12); color: #fde68a; border-color: #78350f; }
-    .fade-enter { animation: fadeIn 240ms ease both; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-    .badge {
-      background: #0b1220;
-      border: 1px solid #1f2937;
-      color: var(--muted);
-    }
-    .score { font-weight: 800; color: var(--accent2); }
-    .combo { font-weight: 800; color: var(--gold); }
-    .danger { color: var(--danger); }
-    .hint { color: var(--muted); font-size: 0.95rem; }
-    .footer-note { color: var(--muted); font-size: 0.85rem; }
-    .achv {
-      background: #0b1220;
-      border: 1px solid #1f2937;
-      border-radius: 10px;
-      padding: 10px 12px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .achv .icon {
-      width: 28px; height: 28px;
-      display: grid; place-items: center;
-      border-radius: 50%;
-      background: rgba(245,158,11,0.15);
-      color: var(--gold);
-      font-weight: 900;
-    }
-    .achv .name { font-weight: 700; }
-    .achv .desc { color: var(--muted); font-size: 0.9rem; }
-    .modal-content {
-      background: linear-gradient(180deg, #0d1324 0%, var(--card) 100%);
-      color: var(--text);
-      border: 1px solid #1f2937;
-    }
-    .link {
-      color: var(--accent2);
-      text-decoration: none;
-    }
-    .link:hover { text-decoration: underline; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المحقق الذكي AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
+        body { font-family: 'Cairo', sans-serif; background-color: #020617; color: #f8fafc; margin: 0; }
+        .glass-panel { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .gradient-bg { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); }
+        .input-area { background: rgba(30, 41, 59, 0.5); border: 2px solid rgba(255, 255, 255, 0.1); transition: all 0.3s ease; }
+        .input-area:focus { border-color: #6366f1; background: rgba(30, 41, 59, 0.8); outline: none; box-shadow: 0 0 20px rgba(99, 102, 241, 0.2); }
+        .animate-fade-in { animation: fadeIn 0.6s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
 </head>
 <body>
-  <div class="container py-4">
-    <div class="row justify-content-center">
-      <div class="col-lg-10">
-        <div class="p-4 p-md-5 game-card fade-enter">
-          <div class="d-flex align-items-center justify-content-between mb-3">
-            <h1 class="title h3 mb-0">🌱 Random Garden Quest</h1>
-            <div class="d-flex gap-2">
-              <span class="badge pill">Round: <span id="round">1</span></span>
-              <span class="badge pill">Time: <span id="time">30</span>s</span>
-              <span class="badge pill">Lives: <span id="lives">3</span></span>
-            </div>
-          </div>
+    <div id="root"></div>
 
-          <p class="hint mb-3">
-            **Goal:** Click good tiles (sprouts 🌿) and avoid weeds 🪤. Specials ⭐ give surprises. Each round randomizes rules—stay sharp!
-          </p>
+    <script type="text/babel">
+        const { useState } = React;
 
-          <div class="row g-3 mb-3">
-            <div class="col-md-6">
-              <div class="meter"><span id="progress"></span></div>
-              <div class="mt-2">
-                <span class="score">Score: <span id="score">0</span></span>
-                <span class="ms-3 combo">Combo: <span id="combo">x1</span></span>
-              </div>
-            </div>
-            <div class="col-md-6 text-md-end">
-              <button id="startBtn" class="btn btn-accent pill me-2">Start / Next Round</button>
-              <button id="resetBtn" class="btn btn-ghost pill">Reset</button>
-            </div>
-          </div>
+        const Icons = {
+            Brain: () => <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-500"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-2.54Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-2.54Z"/></svg>,
+            Magic: () => <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M3 5h4"/><path d="M21 17v4"/><path d="M19 19h4"/></svg>,
+            Loading: () => <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="animate-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+        };
 
-          <div class="grid mb-3" id="grid"></div>
+        const apiKey = ""; // سيتم توفير المفتاح تلقائياً في البيئة
+        const MODEL_NAME = "gemini-2.5-flash-preview-09-2025";
 
-          <div class="d-flex align-items-center justify-content-between">
-            <div>
-              <span class="badge me-2">Rule: <span id="ruleText">Click sprouts 🌿, avoid weeds 🪤</span></span>
-              <span class="badge">Mode: <span id="modeText">Classic</span></span>
-            </div>
-            <div>
-              <button class="btn btn-ghost pill" data-bs-toggle="modal" data-bs-target="#achievementsModal">Achievements</button>
-              <button class="btn btn-ghost pill" data-bs-toggle="modal" data-bs-target="#leaderboardModal">Leaderboard</button>
-            </div>
-          </div>
-        </div>
+        function App() {
+            const [userInput, setUserInput] = useState("");
+            const [loading, setLoading] = useState(false);
+            const [result, setResult] = useState(null);
+            const [error, setError] = useState("");
 
-        <p class="footer-note mt-3">
-          Tip: Fast streaks boost combo and score. Specials can flip rules, add time, or spawn bonus tiles. Every round is different.
-        </p>
-      </div>
-    </div>
-  </div>
+            const handleGuess = async () => {
+                if (!userInput.trim()) return;
+                setLoading(true);
+                setError("");
 
-  <!-- Achievements Modal -->
-  <div class="modal fade" id="achievementsModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content p-3">
-        <div class="modal-header">
-          <h5 class="modal-title">🏆 Achievements</h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body" id="achievementsList">
-          <!-- Filled by JS -->
-        </div>
-      </div>
-    </div>
-  </div>
+                const prompt = `خمن الشيء الذي يصفه المستخدم أدناه باللغة العربية.
+                الوصف: "${userInput}"
+                يجب أن تكون الإجابة بتنسيق JSON حصراً كالتالي:
+                {"guess": "اسم الشيء", "reason": "لماذا تم اختيار هذا التخمين", "confidence": "نسبة التأكد", "category": "فئة الشيء"}`;
 
-  <!-- Leaderboard Modal -->
-  <div class="modal fade" id="leaderboardModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content p-3">
-        <div class="modal-header">
-          <h5 class="modal-title">📈 Leaderboard (Local)</h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <div id="leaderboard"></div>
-          <div class="mt-3">
-            <label class="form-label">Your name</label>
-            <input type="text" id="playerName" class="form-control" placeholder="هيثم" />
-            <button id="saveScoreBtn" class="btn btn-accent pill mt-2">Save current score</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+                try {
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    });
+                    
+                    const data = await response.json();
+                    let rawText = data.candidates[0].content.parts[0].text;
+                    rawText = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
+                    setResult(JSON.parse(rawText));
+                } catch (err) {
+                    setError("تعذر تحليل الوصف حالياً، يرجى المحاولة بكلمات أوضح.");
+                } finally {
+                    setLoading(false);
+                }
+            };
 
-  <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-  <script>
-    // --- Utility RNG & helpers ---
-    const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
-    const sample = (arr) => arr[Math.floor(Math.random() * arr.length)];
-    const shuffle = (arr) => arr.sort(() => Math.random() - 0.5);
+            return (
+                <div className="min-h-screen flex flex-col items-center justify-center p-4">
+                    {!result ? (
+                        <div className="glass-panel max-w-xl w-full p-8 md:p-12 rounded-[2rem] shadow-2xl animate-fade-in text-center">
+                            <div className="flex justify-center mb-6"><Icons.Brain /></div>
+                            <h1 className="text-3xl font-black mb-3 text-white">المحقق الذكي</h1>
+                            <p className="text-slate-400 mb-8">اكتب وصفاً مفصلاً لأي شيء يدور في ذهنك، وسأحاول تخمينه باستخدام الذكاء الاصطناعي.</p>
+                            
+                            <textarea 
+                                value={userInput}
+                                onChange={(e) => setUserInput(e.target.value)}
+                                className="w-full h-40 p-5 rounded-2xl input-area text-white text-lg placeholder-slate-600 resize-none mb-6"
+                                placeholder="مثال: جهاز صغير له شاشة لمس ونستخدمه للاتصال وتصفح الإنترنت..."
+                            />
 
-    // --- Game state ---
-    const state = {
-      round: 1,
-      time: 30,
-      lives: 3,
-      score: 0,
-      combo: 1,
-      targetHits: 0,
-      targetGoal: 10,
-      running: false,
-      mode: "Classic",
-      rule: "Click sprouts 🌿, avoid weeds 🪤",
-      tiles: [],
-      timerId: null,
-      achievements: new Set(JSON.parse(localStorage.getItem("achievements") || "[]")),
-      leaderboard: JSON.parse(localStorage.getItem("leaderboard") || "[]"),
-    };
+                            {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
 
-    // --- DOM refs ---
-    const el = {
-      round: document.getElementById("round"),
-      time: document.getElementById("time"),
-      lives: document.getElementById("lives"),
-      score: document.getElementById("score"),
-      combo: document.getElementById("combo"),
-      progress: document.getElementById("progress"),
-      grid: document.getElementById("grid"),
-      ruleText: document.getElementById("ruleText"),
-      modeText: document.getElementById("modeText"),
-      startBtn: document.getElementById("startBtn"),
-      resetBtn: document.getElementById("resetBtn"),
-      achievementsList: document.getElementById("achievementsList"),
-      leaderboard: document.getElementById("leaderboard"),
-      playerName: document.getElementById("playerName"),
-      saveScoreBtn: document.getElementById("saveScoreBtn"),
-    };
+                            <button 
+                                onClick={handleGuess}
+                                disabled={loading || !userInput.trim()}
+                                className="gradient-bg w-full py-4 rounded-2xl font-bold text-xl flex items-center justify-center gap-3 hover:opacity-90 transition-all disabled:opacity-50"
+                            >
+                                {loading ? <Icons.Loading /> : <><Icons.Magic /> خمن الآن</>}
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="glass-panel max-w-xl w-full p-8 md:p-12 rounded-[2rem] shadow-2xl animate-fade-in text-center">
+                            <div className="mb-2">
+                                <span className="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-400 text-xs font-bold uppercase border border-indigo-500/30">
+                                    {result.category}
+                                </span>
+                            </div>
+                            <h2 className="text-slate-500 font-bold text-sm mb-2 uppercase tracking-widest">التخمين الأرجح:</h2>
+                            <h1 className="text-5xl md:text-6xl font-black mb-6 text-white drop-shadow-md">{result.guess}</h1>
+                            
+                            <div className="bg-white/5 p-6 rounded-2xl mb-8 border border-white/10">
+                                <p className="text-slate-300 leading-relaxed italic">"{result.reason}"</p>
+                            </div>
 
-    // --- Modes & rules ---
-    const MODES = [
-      { name: "Classic", rule: "Click sprouts 🌿, avoid weeds 🪤", good: "🌿", bad: "🪤", special: "⭐" },
-      { name: "Nightfall", rule: "Only click glowing tiles ⭐—others may be weeds", good: "⭐", bad: "🪤", special: "🌿" },
-      { name: "Harvest Rush", rule: "Collect fruits 🍓 fast—weeds reduce lives", good: "🍓", bad: "🪤", special: "⭐" },
-      { name: "Mystery Mix", rule: "Symbols shuffle—watch the rule text!", good: "🌱", bad: "🪲", special: "🎁" },
-      { name: "Flip Chance", rule: "Specials may flip good/bad mid-round", good: "🌿", bad: "🪤", special: "🔄" },
-    ];
+                            <div className="flex items-center justify-between mb-8 px-4">
+                                <span className="text-slate-500 text-sm">دقة التخمين</span>
+                                <span className="text-green-400 font-black text-xl">{result.confidence}</span>
+                            </div>
 
-    const ACHIEVEMENTS = [
-      { id: "firstBlood", name: "First Sprout", desc: "Score your first good tile." },
-      { id: "comboMaster", name: "Combo Master", desc: "Reach combo x5." },
-      { id: "ironGardener", name: "Iron Gardener", desc: "Finish a round without losing a life." },
-      { id: "speedPlanter", name: "Speed Planter", desc: "Hit 5 good tiles in 5 seconds." },
-      { id: "goldenHarvest", name: "Golden Harvest", desc: "Score 500+ in a single round." },
-    ];
-
-    // --- Rendering ---
-    function renderHUD() {
-      el.round.textContent = state.round;
-      el.time.textContent = state.time;
-      el.lives.textContent = state.lives;
-      el.score.textContent = state.score;
-      el.combo.textContent = "x" + state.combo;
-      el.ruleText.textContent = state.rule;
-      el.modeText.textContent = state.mode;
-      const pct = Math.min(100, Math.floor((state.targetHits / state.targetGoal) * 100));
-      el.progress.style.width = pct + "%";
-    }
-
-    function renderGrid() {
-      el.grid.innerHTML = "";
-      state.tiles.forEach((t, idx) => {
-        const div = document.createElement("div");
-        div.className = "tile";
-        div.dataset.index = idx;
-        div.textContent = t.symbol;
-        if (t.type === "good") div.classList.add("good");
-        if (t.type === "bad") div.classList.add("bad");
-        if (t.type === "special") div.classList.add("special");
-        el.grid.appendChild(div);
-      });
-    }
-
-    function renderAchievements() {
-      el.achievementsList.innerHTML = "";
-      ACHIEVEMENTS.forEach(a => {
-        const unlocked = state.achievements.has(a.id);
-        const row = document.createElement("div");
-        row.className = "achv mb-2";
-        row.innerHTML = `
-          <div class="icon">${unlocked ? "🏅" : "🔒"}</div>
-          <div>
-            <div class="name">${a.name}</div>
-            <div class="desc">${a.desc}</div>
-          </div>
-        `;
-        el.achievementsList.appendChild(row);
-      });
-    }
-
-    function renderLeaderboard() {
-      const list = [...state.leaderboard].sort((a,b) => b.score - a.score).slice(0, 10);
-      el.leaderboard.innerHTML = list.length
-        ? list.map((e, i) => `<div class="d-flex justify-content-between mb-1"><span>#${i+1} — ${e.name}</span><strong>${e.score}</strong></div>`).join("")
-        : "<div class='hint'>No scores yet. Play a round and save!</div>";
-    }
-
-    // --- Round generation ---
-    function generateRound() {
-      const mode = sample(MODES);
-      state.mode = mode.name;
-      state.rule = mode.rule;
-
-      const size = 25; // 5x5
-      const goodCount = randInt(7, 11);
-      const badCount = randInt(6, 10);
-      const specialCount = randInt(2, 4);
-
-      const tiles = [];
-      for (let i = 0; i < goodCount; i++) tiles.push({ type: "good", symbol: mode.good });
-      for (let i = 0; i < badCount; i++) tiles.push({ type: "bad", symbol: mode.bad });
-      for (let i = 0; i < specialCount; i++) tiles.push({ type: "special", symbol: mode.special });
-      while (tiles.length < size) tiles.push({ type: "bad", symbol: mode.bad });
-      shuffle(tiles);
-
-      // Random dynamic: some tiles change every few seconds
-      const dynamicSlots = randInt(3, 6);
-      for (let i = 0; i < dynamicSlots; i++) {
-        const idx = randInt(0, size - 1);
-        tiles[idx].dynamic = true;
-      }
-
-      state.tiles = tiles;
-      state.targetHits = 0;
-      state.targetGoal = randInt(8, 12);
-      state.time = randInt(22, 35);
-      state.lives = Math.min(5, 2 + Math.floor(state.round / 2));
-      state.combo = 1;
-      renderHUD();
-      renderGrid();
-    }
-
-    // --- Timers & dynamics ---
-    function startTimer() {
-      clearInterval(state.timerId);
-      state.running = true;
-      state.timerId = setInterval(() => {
-        state.time--;
-        // Flip dynamic tiles occasionally
-        if (Math.random() < 0.25) {
-          const idx = randInt(0, state.tiles.length - 1);
-          const t = state.tiles[idx];
-          if (t.dynamic) {
-            const flip = sample(["good", "bad", "special"]);
-            const mode = MODES.find(m => m.name === state.mode);
-            t.type = flip;
-            t.symbol = flip === "good" ? mode.good : flip === "bad" ? mode.bad : mode.special;
-            renderGrid();
-          }
-        }
-        // Flip rule on Flip Chance mode via special trigger
-        if (state.mode === "Flip Chance" && Math.random() < 0.08) {
-          const mode = MODES.find(m => m.name === "Flip Chance");
-          const tmp = mode.good;
-          mode.good = mode.bad;
-          mode.bad = tmp;
-          state.rule = "Rules flipped! Watch symbols.";
-          renderHUD();
+                            <button 
+                                onClick={() => {setResult(null); setUserInput("");}}
+                                className="w-full py-4 bg-slate-800 hover:bg-slate-700 rounded-2xl font-bold transition-all text-white border border-white/5"
+                            >
+                                تجربة وصف جديد
+                            </button>
+                        </div>
+                    )}
+                    
+                    <footer className="mt-8 text-slate-600 text-xs">
+                        مدعوم بتقنيات Gemini للذكاء الاصطناعي
+                    </footer>
+                </div>
+            );
         }
 
-        renderHUD();
-        if (state.time <= 0) endRound(false);
-      }, 1000);
-    }
-
-    function stopTimer() {
-      clearInterval(state.timerId);
-      state.running = false;
-    }
-
-    // --- Scoring & events ---
-    function addScore(base) {
-      const gained = Math.floor(base * state.combo);
-      state.score += gained;
-      renderHUD();
-      if (state.score >= 500) unlock("goldenHarvest");
-    }
-
-    function loseLife() {
-      state.lives--;
-      state.combo = 1;
-      renderHUD();
-      if (state.lives <= 0) endRound(false);
-    }
-
-    function unlock(id) {
-      if (!state.achievements.has(id)) {
-        state.achievements.add(id);
-        localStorage.setItem("achievements", JSON.stringify([...state.achievements]));
-        renderAchievements();
-      }
-    }
-
-    // --- Round end ---
-    function endRound(won) {
-      stopTimer();
-      state.running = false;
-      const msg = won
-        ? "🌟 Round complete! Great job."
-        : "💀 Round over. Try again!";
-      const bonus = won ? 100 + randInt(0, 100) : 0;
-      state.score += bonus;
-      if (won && state.lives >= 2) unlock("ironGardener");
-      alert(`${msg}\nScore bonus: ${bonus}\nTotal score: ${state.score}`);
-    }
-
-    // --- Input handling ---
-    el.grid.addEventListener("click", (e) => {
-      const tile = e.target.closest(".tile");
-      if (!tile || !state.running) return;
-      const idx = Number(tile.dataset.index);
-      const t = state.tiles[idx];
-
-      if (t.type === "good") {
-        addScore(25);
-        state.targetHits++;
-        state.combo = Math.min(10, state.combo + 0.25);
-        tile.classList.add("good");
-        tile.style.transform = "scale(0.96)";
-        setTimeout(() => (tile.style.transform = ""), 120);
-        if (state.targetHits === 1) unlock("firstBlood");
-        if (state.combo >= 5) unlock("comboMaster");
-        if (state.targetHits >= state.targetGoal) endRound(true);
-      } else if (t.type === "bad") {
-        loseLife();
-        tile.classList.add("bad");
-        tile.style.transform = "scale(1.06)";
-        setTimeout(() => (tile.style.transform = ""), 120);
-      } else if (t.type === "special") {
-        // Random special effects
-        const effect = sample(["time+", "time-", "combo+", "flip", "bonus", "spawn"]);
-        if (effect === "time+") { state.time = Math.min(state.time + 5, 45); }
-        if (effect === "time-") { state.time = Math.max(state.time - 5, 5); }
-        if (effect === "combo+") { state.combo = Math.min(10, state.combo + 1); }
-        if (effect === "flip") {
-          // Flip a random tile type
-          const j = randInt(0, state.tiles.length - 1);
-          const tt = state.tiles[j];
-          const mode = MODES.find(m => m.name === state.mode);
-          const flip = sample(["good", "bad"]);
-          tt.type = flip;
-          tt.symbol = flip === "good" ? mode.good : mode.bad;
-          renderGrid();
-        }
-        if (effect === "bonus") { addScore(100); }
-        if (effect === "spawn") {
-          // Spawn extra good tiles
-          for (let k = 0; k < 3; k++) {
-            const j = randInt(0, state.tiles.length - 1);
-            const mode = MODES.find(m => m.name === state.mode);
-            state.tiles[j] = { type: "good", symbol: mode.good, dynamic: true };
-          }
-          renderGrid();
-        }
-        renderHUD();
-      }
-    });
-
-    // --- Buttons ---
-    el.startBtn.addEventListener("click", () => {
-      state.round++;
-      generateRound();
-      startTimer();
-    });
-
-    el.resetBtn.addEventListener("click", () => {
-      stopTimer();
-      state.round = 1;
-      state.score = 0;
-      state.combo = 1;
-      state.lives = 3;
-      state.time = 30;
-      generateRound();
-      renderAchievements();
-      renderLeaderboard();
-    });
-
-    el.saveScoreBtn.addEventListener("click", () => {
-      const name = (el.playerName.value || "هيثم").trim();
-      state.leaderboard.push({ name, score: state.score, date: Date.now() });
-      localStorage.setItem("leaderboard", JSON.stringify(state.leaderboard));
-      renderLeaderboard();
-    });
-
-    // --- Init ---
-    generateRound();
-    renderAchievements();
-    renderLeaderboard();
-
-    // Speed Planter tracker
-    (function trackSpeedPlanter() {
-      let hits = 0;
-      let windowStart = Date.now();
-      el.grid.addEventListener("click", (e) => {
-        const tile = e.target.closest(".tile");
-        if (!tile || !state.running) return;
-        const idx = Number(tile.dataset.index);
-        const t = state.tiles[idx];
-        const now = Date.now();
-        if (now - windowStart > 5000) { hits = 0; windowStart = now; }
-        if (t.type === "good") {
-          hits++;
-          if (hits >= 5) unlock("speedPlanter");
-        }
-      });
-    })();
-  </script>
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
 </body>
 </html>
+
